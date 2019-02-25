@@ -3,7 +3,16 @@ __all__ = [
     'read_json_log',
     'log_json',
     'scatterdots',
-    'scatterjitter'
+    'scatterjitter',
+    'clean_experiment_logs',
+    'check_omitted_parameters',
+    'N_FOLDS',
+    'METRICS',
+    'CONT_PARAMETERS',
+    'LOG_PARAMETERS',
+    'SET_PARAMETERS',
+    'INT_PARAMETERS',
+    'drop_boring_columns'
 ]
 
 import warnings
@@ -12,6 +21,7 @@ import sys
 from datetime import datetime
 import json
 from timeit import default_timer as timer
+from itertools import product
 
 import numpy as np
 import pandas as pd
@@ -22,6 +32,48 @@ import lightgbm as lgb
 
 from bokeh.plotting import figure
 from bokeh.transform import jitter
+
+
+N_FOLDS = 5
+
+METRICS = ['accuracy', 'average_precision', 'f1', 'log_loss', 'precision', 'recall', 'roc_auc']
+
+CONT_PARAMETERS = [
+    'param_bagging_fraction',
+    'param_feature_fraction',
+    'mean_best_iteration'
+]
+
+LOG_PARAMETERS = [
+    'param_learning_rate',
+    'param_min_sum_hessian_in_leaf',
+    'param_max_delta_step',
+    'param_lambda_l1', 
+    'param_lambda_l2',
+    'param_min_gain_to_split', 
+    'param_cat_l2',
+    'param_cat_smooth', 
+    'param_scale_pos_weight'
+]
+
+SET_PARAMETERS = [
+    'param_is_unbalance', 
+    'param_boost_from_average',
+    'param_metric'
+]
+
+INT_PARAMETERS = [
+    'param_num_leaves',
+    'param_max_depth',
+    'param_min_data_in_leaf',
+    'param_bagging_freq',
+    'param_min_data_per_group',
+    'param_max_cat_threshold',
+    'param_max_cat_to_onehot', 
+    'param_max_bin',
+    'param_min_data_in_bin',
+    'param_bin_construct_sample_cnt',
+]
 
 
 # from https://github.com/scikit-learn/scikit-learn/blob/19bffee9b172cf169fded295e3474d1de96cdc57/sklearn/utils/random.py
@@ -93,9 +145,10 @@ def scatterdots(cds, x, y, alpha=0.1, x_axis_type='auto', y_axis_type='auto'):
     return p
 
 
-def scatterjitter(cds, x, y, alpha=0.1):
+def scatterjitter(cds, x, y, alpha=0.1, jitter_width=1/200):
     p = figure()
-    p.square(x=jitter(x, distribution='normal', width=np.ptp(cds.data[x]) / 200),
+    p.square(x=jitter(x, distribution='normal',
+                      width=np.ptp(cds.data[x]) * jitter_width),
              y=y, source=cds, size=1, alpha=alpha)
     p.xaxis[0].axis_label = x
     return p
@@ -117,7 +170,7 @@ def evaluate_parameters(parameters, folds, X_val, y_val, experiment_name,
             train_start = timer()
             model = lgb.train(parameters,
                               train, valid_sets=test,
-                              num_boost_round=2000,
+                              num_boost_round=5000,
                               early_stopping_rounds=50,
                               verbose_eval=False)
             train_time = timer() - train_start
@@ -156,3 +209,50 @@ def evaluate_parameters(parameters, folds, X_val, y_val, experiment_name,
     finally:
         with log_lock:
             log_json(log_file, log_data)
+
+
+def clean_experiment_logs(df):
+    df = df[df.success == True]\
+        .rename(lambda x: x.replace('_score', ''), axis='columns')
+
+    folds = ['split' + str(i) for i in range(0, 5)]
+
+    for t, m in product(['train', 'test', 'val'], METRICS):
+        b = '_' + t + '_' + m
+        c = [f + b for f in folds]
+        df['mean' + b] = df[c].mean(axis=1)
+        df['range' + b] = df[c].max(axis=1) - df[c].min(axis=1)
+        df.drop(c, axis=1, inplace=True)
+
+    for m in METRICS:
+        df['test_overfit_' + m] = df['mean_train_' + m] - df['mean_test_' + m]
+        df['val_test_diff_' + m] = df['mean_test_' + m] - df['mean_val_' + m]
+
+    train_time_cols = [f + '_train_time' for f in folds]
+    df['mean_train_time'] = df[train_time_cols].mean(axis=1)
+    pred_time_cols = [f + '_pred_time' for f in folds]
+    df['mean_pred_time'] = df[pred_time_cols].mean(axis=1)
+    df.drop(train_time_cols + pred_time_cols, axis=1, inplace=True)
+
+    iteration_cols = [f + '_best_iteration' for f in folds]
+    df['mean_best_iteration'] = df[iteration_cols].mean(axis=1)
+    df['range_best_iteration'] = \
+        df[iteration_cols].max(axis=1) - df[iteration_cols].min(axis=1)
+
+    df.drop(iteration_cols, axis=1, inplace=True)
+
+    return df
+
+
+def drop_boring_columns(df):
+    return df.dropna(how='all', axis='columns')\
+        .pipe(lambda x: x.loc[:, x.nunique() != 1])
+
+
+def check_omitted_parameters(df):
+    all_parameters = df.filter(like='param_', axis='columns')\
+        .drop('param_seed', axis='columns')\
+        .pipe(drop_boring_columns)\
+        .columns.values
+
+    return set(all_parameters) - (set(CONT_PARAMETERS) | set(LOG_PARAMETERS) | set(SET_PARAMETERS) | set(INT_PARAMETERS))

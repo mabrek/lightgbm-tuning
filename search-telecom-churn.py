@@ -15,7 +15,7 @@ from scipy.stats import randint as randint
 from scipy.stats import uniform as uniform
 import lightgbm as lgb
 
-from utils import loguniform, evaluate_parameters
+from utils import loguniform, evaluate_parameters, N_FOLDS
 
 logging.basicConfig(level=logging.INFO)
 
@@ -68,7 +68,7 @@ if __name__ == "__main__":
     X = df.drop(['Churn', 'tenure', 'TotalCharges'], axis='columns')
 
     X_train, X_val, y_train, y_val = train_test_split(
-        X, y, test_size=0.2, stratify=y)
+        X, y, test_size=0.2, stratify=y, random_state=834936)
 
     # TODO don't copy data, pass indexes only
     folds = [
@@ -77,46 +77,46 @@ if __name__ == "__main__":
          lgb.Dataset(X_train.iloc[test_idx], label=y_train.iloc[test_idx],
                      free_raw_data=False)]
         for train_idx, test_idx
-        in StratifiedKFold(n_splits=5, random_state=9342).split(X_train, y_train)]
+        in StratifiedKFold(n_splits=N_FOLDS, random_state=9342).split(X_train, y_train)]
 
     # TODO split into wide and narrow (for better metric range) sets
     parameter_space = {
         'objective': ['binary'],
         'boosting': ['gbdt'],
-        'learning_rate': loguniform(low=-4, high=1, base=10),
-        'num_leaves': randint(2, 200),
+        'learning_rate': loguniform(low=-8, high=6, base=10),
+        'num_leaves': randint(2, 4000),
         'tree_learner': ['serial'],
         'num_threads': [1],  # will use per-parameter-set threads
         'device_type': ['cpu'],
         'seed': randint(1, 100000),
 
-        'max_depth': randint(1, 100),
-        'min_data_in_leaf': randint(1, 1000),
-        'min_sum_hessian_in_leaf': loguniform(low=-5, high=1, base=10),
+        'max_depth': randint(1, 400),
+        'min_data_in_leaf': randint(1, 2000),
+        'min_sum_hessian_in_leaf': loguniform(low=-10, high=6, base=10),
         'bagging_fraction': uniform(loc=0.1, scale=0.9),
-        'bagging_freq': randint(0, 1000),
-        'feature_fraction': uniform(loc=0.2, scale=0.6),
-        'max_delta_step': loguniform(low=-4, high=1, base=10),
-        'lambda_l1': loguniform(low=-6, high=3, base=10),
-        'lambda_l2': loguniform(low=-6, high=3, base=10),
-        'min_gain_to_split': loguniform(low=-6, high=3, base=10),
+        'bagging_freq': randint(0, 2000),
+        'feature_fraction': uniform(loc=0.2, scale=0.8),
+        'max_delta_step': loguniform(low=-8, high=6, base=10),
+        'lambda_l1': loguniform(low=-10, high=6, base=10),
+        'lambda_l2': loguniform(low=-10, high=10, base=10),
+        'min_gain_to_split': loguniform(low=-10, high=6, base=10),
 
-        'min_data_per_group': randint(50, 1000),
-        'max_cat_threshold': randint(5, 500),
-        'cat_l2': loguniform(low=-1, high=3, base=10),
-        'cat_smooth': randint(1, 100),
-        'max_cat_to_onehot': randint(1, 10),
+        'min_data_per_group': randint(1, 4000),
+        'max_cat_threshold': randint(1, 2000),
+        'cat_l2': loguniform(low=-10, high=10, base=10),
+        'cat_smooth': loguniform(low=-10, high=10, base=10),
+        'max_cat_to_onehot': randint(1, 100),
 
         'is_unbalance': [False, True],
         'scale_pos_weight': loguniform(low=-1, high=2, base=10),
         'boost_from_average': [False, True],
 
-        'metric': ['binary_logloss'],
+        'metric': ['binary_logloss', 'auc'],
 
         'verbosity': [-1],
-        'max_bin': randint(4, 1024),
-        'min_data_in_bin': randint(2, 100),
-        'bin_construct_sample_cnt': randint(10, 1000000),
+        'max_bin': randint(4, 2048),
+        'min_data_in_bin': randint(1, 5000),
+        'bin_construct_sample_cnt': randint(5, 10000),
     }
 
     def parameters_evaluator(parameters):
