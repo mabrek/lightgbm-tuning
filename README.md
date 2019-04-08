@@ -1,6 +1,6 @@
 # LightGBM Tuning Experiment
 
-The idea was to get a small and not very predictable dataset and try to measure an effect of LightGBM parameter tuning on classification metrics by running a long random search in a large parameter space.
+The initial idea was to get a small unbalanced and not very predictable dataset and try to measure an effect of LightGBM parameter tuning on classification metrics by running a long random search in a large parameter space.
 
 TLDR: [view experiment results in jupyter notebook](https://nbviewer.jupyter.org/github/mabrek/lightgbm-tuning/blob/export/explore%20experiments.ipynb)
 
@@ -25,11 +25,7 @@ Run experiments (in docker container):
     cd /lightgbm-tuning/
     ./search-telecom-churn.py --name example-2processes --log experiments/example.log --processes 2 --iterations 10
 
-For better performance increase `--chunksize` to 10-100 when running many `--iterations`, set `--processes` to the number of physical CPU cores available.
-
-You can change dataset, preprocessing steps, and parameter search space by copying and modifying `search-telecom-churn.py`.
-
-Dataset-independent functions go to `utils.py`. PRs are welcome!
+For better performance set `--processes` to the number of physical CPU cores available.
 
 Then open `explore experiments.ipynb` in `jupyter-notebook`, load your experiment logs and play with results.
 

@@ -1,92 +1,21 @@
 #!/usr/bin/env python
 
-import argparse
-import warnings
-from multiprocessing import Pool, Lock
-import logging
-from functools import partial
+from multiprocessing import Lock
 
-import pandas as pd
-import numpy as np
-from sklearn.model_selection import train_test_split, StratifiedKFold
-from sklearn.model_selection import ParameterSampler
-from sklearn.exceptions import UndefinedMetricWarning
 from scipy.stats import randint as randint
 from scipy.stats import uniform as uniform
-import lightgbm as lgb
 
-from utils import loguniform, evaluate_parameters, N_FOLDS
-
-logging.basicConfig(level=logging.INFO)
-
-warnings.filterwarnings("ignore",
-                        category=UndefinedMetricWarning,
-                        module='sklearn.metrics')
-
-warnings.filterwarnings("ignore",
-                        category=UserWarning,
-                        module='lightgbm.basic')
-
+from utils import loguniform, EVAL_AT, parse_args, read_telecom_churn,\
+    evaluate_parameters, run_pool
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        description='Random search lightgbm parameters')
-    parser.add_argument('--name', required=True)
-    parser.add_argument('--log', required=True)
-    parser.add_argument('--processes', type=int, default=1)
-    parser.add_argument('--iterations', type=int, default=1)
-    parser.add_argument('--chunksize', type=int, default=1)
-    args = parser.parse_args()
-
-    log_lock = Lock()
-
-    df = pd.read_csv(
-        './data/WA_Fn-UseC_-Telco-Customer-Churn.csv',
-        index_col='customerID',
-        dtype={
-            'gender': 'category',
-            'SeniorCitizen': 'category',
-            'Partner': 'category',
-            'Dependents': 'category',
-            'PhoneService': 'category',
-            'MultipleLines': 'category',
-            'InternetService': 'category',
-            'OnlineSecurity': 'category',
-            'OnlineBackup': 'category',
-            'DeviceProtection': 'category',
-            'TechSupport': 'category',
-            'StreamingTV': 'category',
-            'StreamingMovies': 'category',
-            'Contract': 'category',
-            'PaperlessBilling': 'category',
-            'PaymentMethod': 'category'
-        }).sample(
-            frac=1, random_state=102984)
-    df.TotalCharges = pd.to_numeric(df.TotalCharges, errors='coerce')
-
-    y = (df.Churn == 'Yes').astype(np.int8)
-    X = df.drop(['Churn', 'tenure', 'TotalCharges'], axis='columns')
-
-    X_train, X_val, y_train, y_val = train_test_split(
-        X, y, test_size=0.2, stratify=y, random_state=834936)
-
-    # TODO don't copy data, pass indexes only
-    folds = [
-        [lgb.Dataset(X_train.iloc[train_idx], label=y_train.iloc[train_idx],
-                     free_raw_data=False),
-         lgb.Dataset(X_train.iloc[test_idx], label=y_train.iloc[test_idx],
-                     free_raw_data=False)]
-        for train_idx, test_idx
-        in StratifiedKFold(n_splits=N_FOLDS, random_state=9342).split(X_train, y_train)]
-
-    # TODO split into wide and narrow (for better metric range) sets
     parameter_space = {
         'objective': ['binary'],
         'boosting': ['gbdt'],
         'learning_rate': loguniform(low=-8, high=6, base=10),
         'num_leaves': randint(2, 4000),
         'tree_learner': ['serial'],
-        'num_threads': [1],  # will use per-parameter-set threads
+        'num_threads': [1],  # will spread different parameter sets across cores
         'device_type': ['cpu'],
         'seed': randint(1, 100000),
 
@@ -111,7 +40,8 @@ if __name__ == "__main__":
         'scale_pos_weight': loguniform(low=-1, high=2, base=10),
         'boost_from_average': [False, True],
 
-        'metric': ['binary_logloss', 'auc'],
+        'metric': [['binary_logloss', 'auc', 'map', 'binary_error', 'kldiv']],
+        'eval_at': [EVAL_AT],
 
         'verbosity': [-1],
         'max_bin': randint(4, 2048),
@@ -119,19 +49,19 @@ if __name__ == "__main__":
         'bin_construct_sample_cnt': randint(5, 10000),
     }
 
+    args = parse_args()
+    log_lock = Lock()
+    folds, validation = read_telecom_churn()
+
     def parameters_evaluator(parameters):
         evaluate_parameters(
             parameters,
             folds=folds,
-            X_val=X_val, y_val=y_val,
+            validation=validation,
             experiment_name=args.name,
             log_file=args.log,
-            log_lock=log_lock)
+            log_lock=log_lock,
+            num_boost_round=500
+        )
 
-    with Pool(processes=args.processes) as pool:
-        results = pool.imap_unordered(
-            parameters_evaluator,
-            ParameterSampler(parameter_space, args.iterations),
-            chunksize=args.chunksize)
-        for r in results:
-            print('.', end='', flush=True)
+    run_pool(parameter_space, args, parameters_evaluator)

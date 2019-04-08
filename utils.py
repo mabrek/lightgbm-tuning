@@ -2,17 +2,31 @@ __all__ = [
     'loguniform',
     'read_json_log',
     'log_json',
-    'scatterdots',
-    'scatterjitter',
-    'clean_experiment_logs',
+    'summarize_logs',
+    'read_summarized_logs',
     'check_omitted_parameters',
     'N_FOLDS',
+    'EVAL_AT',
     'METRICS',
+    'DATA_METRICS',
+    'SPLITS',
+    'SPLIT_METRICS',
     'CONT_PARAMETERS',
     'LOG_PARAMETERS',
     'SET_PARAMETERS',
     'INT_PARAMETERS',
-    'drop_boring_columns'
+    'drop_boring_columns',
+    'read_full_logs',
+    'unfold_iterations',
+    'shaderdots',
+    'read_narrow',
+    'top_mean_dev_auc',
+    'top_mean_validation_auc',
+    'rolling_min_dev_auc',
+    'narrow_filter',
+    'parse_args',
+    'read_telecom_churn',
+    'run_pool'
 ]
 
 import warnings
@@ -20,28 +34,53 @@ import traceback
 import sys
 from datetime import datetime
 import json
-from timeit import default_timer as timer
 from itertools import product
+from multiprocessing import Pool
+import logging
+import argparse
 
 import numpy as np
 import pandas as pd
 
 from sklearn.utils import check_random_state
-from sklearn.metrics import roc_auc_score, log_loss, average_precision_score, precision_score, recall_score, accuracy_score, f1_score
+from sklearn.model_selection import train_test_split, StratifiedKFold
+from sklearn.model_selection import ParameterSampler
 import lightgbm as lgb
 
 from bokeh.plotting import figure
-from bokeh.transform import jitter
+
+import datashader as ds
+import datashader.transfer_functions as tf
+from datashader.bokeh_ext import InteractiveImage
+
+
+logging.basicConfig(level=logging.INFO)
+
+warnings.filterwarnings("ignore",
+                        category=UserWarning,
+                        module='lightgbm.basic')
+
 
 
 N_FOLDS = 5
 
-METRICS = ['accuracy', 'average_precision', 'f1', 'log_loss', 'precision', 'recall', 'roc_auc']
+EVAL_AT = [10, 100, 1000]
+
+METRICS = ['binary_logloss', 'auc', 'binary_error', 'kldiv']\
+    + [f'map_{i}' for i in EVAL_AT]
+
+DATA_METRICS = ['_'.join([d, m])
+                for d, m
+                in product(['train', 'dev', 'validation'], METRICS)]
+
+SPLITS = ['split' + str(i) for i in range(N_FOLDS)]
+
+SPLIT_METRICS = ['_'.join([s, m]) for s, m in product(SPLITS, DATA_METRICS)]
 
 CONT_PARAMETERS = [
     'param_bagging_fraction',
     'param_feature_fraction',
-    'mean_best_iteration'
+    'iteration'
 ]
 
 LOG_PARAMETERS = [
@@ -57,9 +96,8 @@ LOG_PARAMETERS = [
 ]
 
 SET_PARAMETERS = [
-    'param_is_unbalance', 
-    'param_boost_from_average',
-    'param_metric'
+    'param_is_unbalance',
+    'param_boost_from_average'
 ]
 
 INT_PARAMETERS = [
@@ -74,6 +112,80 @@ INT_PARAMETERS = [
     'param_min_data_in_bin',
     'param_bin_construct_sample_cnt',
 ]
+
+
+def read_telecom_churn():
+    df = pd.read_csv(
+        './data/WA_Fn-UseC_-Telco-Customer-Churn.csv',
+        index_col='customerID',
+        dtype={
+            'gender': 'category',
+            'SeniorCitizen': 'category',
+            'Partner': 'category',
+            'Dependents': 'category',
+            'PhoneService': 'category',
+            'MultipleLines': 'category',
+            'InternetService': 'category',
+            'OnlineSecurity': 'category',
+            'OnlineBackup': 'category',
+            'DeviceProtection': 'category',
+            'TechSupport': 'category',
+            'StreamingTV': 'category',
+            'StreamingMovies': 'category',
+            'Contract': 'category',
+            'PaperlessBilling': 'category',
+            'PaymentMethod': 'category'
+        }).sample(
+            frac=1, random_state=102984)
+    df.TotalCharges = pd.to_numeric(df.TotalCharges, errors='coerce')
+
+    y = (df.Churn == 'Yes').astype(np.int8)
+    X = df.drop(['Churn', 'tenure', 'TotalCharges'], axis='columns')
+
+    X_train, X_val, y_train, y_val = train_test_split(
+        X, y, test_size=0.2, stratify=y, random_state=834936)
+
+    validation = lgb.Dataset(
+        X_val,
+        label=y_val,
+        group=[X_val.shape[0]],
+        free_raw_data=False
+    )
+    folds = [
+        [lgb.Dataset(X_train.iloc[train_idx],
+                     label=y_train.iloc[train_idx],
+                     group=[len(train_idx)],
+                     free_raw_data=False),
+         lgb.Dataset(X_train.iloc[test_idx],
+                     label=y_train.iloc[test_idx],
+                     group=[len(test_idx)],
+                     free_raw_data=False)]
+        for train_idx, test_idx
+        in StratifiedKFold(n_splits=N_FOLDS,
+                           random_state=9342).split(X_train, y_train)
+    ]
+    return folds, validation
+
+
+def parse_args():
+    parser = argparse.ArgumentParser(
+        description='Random search LightGBM parameters')
+    parser.add_argument('--name', required=True)
+    parser.add_argument('--log', required=True)
+    parser.add_argument('--processes', type=int, default=1)
+    parser.add_argument('--iterations', type=int, default=1)
+    parser.add_argument('--chunksize', type=int, default=10)
+    return parser.parse_args()
+
+
+def run_pool(parameter_space, args, parameters_evaluator):
+    with Pool(processes=args.processes) as pool:
+        results = pool.imap_unordered(
+            parameters_evaluator,
+            ParameterSampler(parameter_space, args.iterations),
+            chunksize=args.chunksize)
+        for r in results:
+            print('.', end='', flush=True)
 
 
 # from https://github.com/scikit-learn/scikit-learn/blob/19bffee9b172cf169fded295e3474d1de96cdc57/sklearn/utils/random.py
@@ -128,8 +240,9 @@ class loguniform:
         return rv
 
 
-def read_json_log(f):
-    return pd.read_json(f, typ='frame', orient='records', lines=True)
+def read_json_log(f, chunksize=None):
+    return pd.read_json(f, typ='frame', orient='records', lines=True,
+                        chunksize=chunksize, dtype={'success': 'object'})
 
 
 def log_json(file, data):
@@ -138,24 +251,8 @@ def log_json(file, data):
         print(json.dumps(data), file=output, flush=True)
 
 
-def scatterdots(cds, x, y, alpha=0.1, x_axis_type='auto', y_axis_type='auto'):
-    p = figure(x_axis_type=x_axis_type, y_axis_type=y_axis_type)
-    p.square(x=x, y=y, source=cds, size=1, alpha=alpha)
-    p.xaxis[0].axis_label = x
-    return p
-
-
-def scatterjitter(cds, x, y, alpha=0.1, jitter_width=1/200):
-    p = figure()
-    p.square(x=jitter(x, distribution='normal',
-                      width=np.ptp(cds.data[x]) * jitter_width),
-             y=y, source=cds, size=1, alpha=alpha)
-    p.xaxis[0].axis_label = x
-    return p
-
-
-def evaluate_parameters(parameters, folds, X_val, y_val, experiment_name,
-                        log_file, log_lock):
+def evaluate_parameters(parameters, folds, validation, experiment_name,
+                        log_file, log_lock, num_boost_round):
     if parameters['is_unbalance']:
         parameters['scale_pos_weight'] = None
 
@@ -165,40 +262,20 @@ def evaluate_parameters(parameters, folds, X_val, y_val, experiment_name,
     try:
         metrics = {}
         for fold in range(len(folds)):
-            train, test = folds[fold]
+            train, dev = folds[fold]
 
-            train_start = timer()
-            model = lgb.train(parameters,
-                              train, valid_sets=test,
-                              num_boost_round=5000,
-                              early_stopping_rounds=50,
-                              verbose_eval=False)
-            train_time = timer() - train_start
+            eval_result = {}
+            lgb.train(parameters,
+                      train,
+                      valid_sets=[train, dev, validation],
+                      valid_names=['train', 'dev', 'validation'],
+                      evals_result=eval_result,
+                      num_boost_round=num_boost_round,
+                      verbose_eval=False)
 
-            train_pred = model.predict(train.get_data())
-
-            pred_start = timer()
-            test_pred = model.predict(test.get_data())
-            pred_time = timer() - pred_start
-
-            val_pred = model.predict(X_val)
-
-            metrics.update({
-                f'split{fold}_train_time': train_time,
-                f'split{fold}_pred_time': pred_time,
-                f'split{fold}_best_iteration': model.best_iteration,
-            })
-
-            for data_name, data_true, data_pred in [
-                    ['train', train.get_label(), train_pred],
-                    ['test', test.get_label(), test_pred],
-                    ['val', y_val, val_pred]]:
-                for scorer in [log_loss, roc_auc_score, average_precision_score]:
-                    metrics[f'split{fold}_{data_name}_{scorer.__name__}'] \
-                        = scorer(data_true, data_pred)
-                for label_scorer in [accuracy_score, precision_score, recall_score, f1_score]:
-                    metrics[f'split{fold}_{data_name}_{label_scorer.__name__}'] \
-                        = label_scorer(data_true, data_pred > 0.5)
+            for data_name, scores in eval_result.items():
+                for score_name, score_values in scores.items():
+                    metrics[f'split{fold}_{data_name}_{score_name}'] = score_values
 
         metrics['success'] = True
         log_data.update(metrics)
@@ -211,42 +288,90 @@ def evaluate_parameters(parameters, folds, X_val, y_val, experiment_name,
             log_json(log_file, log_data)
 
 
-def clean_experiment_logs(df):
-    df = df[df.success == True]\
-        .rename(lambda x: x.replace('_score', ''), axis='columns')
+def summarize_logs(df):
+    df = df[df.success.fillna(False)].rename(columns=lambda x: x.replace('@', '_'))
 
-    folds = ['split' + str(i) for i in range(0, 5)]
+    rows = []
+    for row in df.itertuples():
+        iterations = pd.DataFrame(
+            {k: getattr(row, k) for k in row._fields if k in SPLIT_METRICS})
 
-    for t, m in product(['train', 'test', 'val'], METRICS):
-        b = '_' + t + '_' + m
-        c = [f + b for f in folds]
-        df['mean' + b] = df[c].mean(axis=1)
-        df['range' + b] = df[c].max(axis=1) - df[c].min(axis=1)
-        df.drop(c, axis=1, inplace=True)
+        for m in DATA_METRICS:
+            c = ['_'.join([s, m]) for s in SPLITS]
+            iterations['mean_' + m] = iterations[c].mean(axis=1)
+            iterations['range_' + m] = iterations[c].max(axis=1) - iterations[c].min(axis=1)
+            iterations.drop(c, axis=1, inplace=True)  # TODO make optional
 
-    for m in METRICS:
-        df['test_overfit_' + m] = df['mean_train_' + m] - df['mean_test_' + m]
-        df['val_test_diff_' + m] = df['mean_test_' + m] - df['mean_val_' + m]
+        for m in METRICS:
+            iterations['dev_train_diff_' + m] =\
+                iterations['mean_dev_' + m] - iterations['mean_train_' + m]
+            iterations['val_dev_diff_' + m] =\
+                iterations['mean_validation_' + m] - iterations['mean_dev_' + m]
 
-    train_time_cols = [f + '_train_time' for f in folds]
-    df['mean_train_time'] = df[train_time_cols].mean(axis=1)
-    pred_time_cols = [f + '_pred_time' for f in folds]
-    df['mean_pred_time'] = df[pred_time_cols].mean(axis=1)
-    df.drop(train_time_cols + pred_time_cols, axis=1, inplace=True)
+        iterations['experiment_id'] = row.Index
 
-    iteration_cols = [f + '_best_iteration' for f in folds]
-    df['mean_best_iteration'] = df[iteration_cols].mean(axis=1)
-    df['range_best_iteration'] = \
-        df[iteration_cols].max(axis=1) - df[iteration_cols].min(axis=1)
+        iterations.index.name = 'iteration'
+        iterations.reset_index(inplace=True)
+        iterations.iteration += 1
 
-    df.drop(iteration_cols, axis=1, inplace=True)
+        rows.append(iterations)
 
-    return df
+    split_summaries = pd.concat(rows, ignore_index=True, copy=False)
+
+    return split_summaries.join(df.drop(columns=SPLIT_METRICS), on='experiment_id')
+
+
+def unfold_iterations(df):
+    df = df[df.success.fillna(False)].rename(columns=lambda x: x.replace('@', '_'))
+
+    rows = []
+    for row in df.itertuples():
+
+        for s in range(N_FOLDS):
+            one_split_metrics = {'split' + str(s) + '_' + m: m for m in DATA_METRICS}
+
+            iterations = pd.DataFrame(
+                {one_split_metrics[k]: getattr(row, k)
+                 for k in row._fields if k in one_split_metrics.keys()})
+
+            for m in METRICS:
+                iterations['dev_train_diff_' + m] =\
+                    iterations['dev_' + m] - iterations['train_' + m]
+                iterations['val_dev_diff_' + m] =\
+                    iterations['validation_' + m] - iterations['dev_' + m]
+
+            iterations['experiment_id'] = row.Index
+            iterations['split'] = s
+
+            iterations.index.name = 'iteration'
+            iterations.reset_index(inplace=True)
+            iterations.iteration += 1
+
+            rows.append(iterations)
+
+    split_data = pd.concat(rows, ignore_index=True, copy=False)
+
+    return split_data.join(df.drop(columns=SPLIT_METRICS), on='experiment_id')
 
 
 def drop_boring_columns(df):
     return df.dropna(how='all', axis='columns')\
+        .drop(columns=['param_eval_at', 'param_metric'], errors='ignore')\
         .pipe(lambda x: x.loc[:, x.nunique() != 1])
+
+
+def read_summarized_logs(f, chunksize=1000):
+    logs = read_json_log(f, chunksize)
+    unfolded = map(summarize_logs, logs)
+    cleaned = map(drop_boring_columns, unfolded)
+    return pd.concat(list(cleaned), ignore_index=True, sort=True)
+
+
+def read_full_logs(f, chunksize=1000):
+    logs = read_json_log(f, chunksize)
+    tidy = map(unfold_iterations, logs)
+    cleaned = map(drop_boring_columns, tidy)
+    return pd.concat(list(cleaned), ignore_index=True, sort=True)
 
 
 def check_omitted_parameters(df):
@@ -256,3 +381,74 @@ def check_omitted_parameters(df):
         .columns.values
 
     return set(all_parameters) - (set(CONT_PARAMETERS) | set(LOG_PARAMETERS) | set(SET_PARAMETERS) | set(INT_PARAMETERS))
+
+
+def shaderdots(df, x, y, plot_width, plot_height, x_axis_type='linear'):
+    def image_callback(x_range, y_range, w, h):
+        return tf.dynspread(
+            tf.shade(
+                ds.Canvas(
+                    plot_width=w, plot_height=h, 
+                    x_range=x_range, y_range=y_range,
+                    x_axis_type=x_axis_type)\
+                .points(df, x, y),
+            ),
+            max_px=1,  threshold=0.5)
+
+    p = figure(plot_width=plot_width, plot_height=plot_height, x_axis_type=x_axis_type,
+              x_range=df[x].agg(['min', 'max']).values,
+              y_range=df[y].agg(['min', 'max']).values)
+    p.xaxis[0].axis_label = x
+    p.yaxis[0].axis_label = y
+    
+    return InteractiveImage(p, image_callback)
+
+
+def narrow_filter(df):
+    return df.query('''1e-4 <= param_learning_rate and param_learning_rate <= 1e-1 \
+                    and 600 <= param_min_data_in_leaf and param_min_data_in_leaf <= 1000 \
+                    and 1e-10 <= param_min_sum_hessian_in_leaf and param_min_sum_hessian_in_leaf <= 316 \
+                    and 0.4 <= param_bagging_fraction and param_bagging_fraction <= 0.8 \
+                    and 0.3 <= param_feature_fraction and param_feature_fraction <= 0.8 \
+                    and 1e-4 <= param_max_delta_step and  param_max_delta_step <= 1 \
+                    and 1 <= param_lambda_l1 and param_lambda_l1 <= 252 \
+                    and 1e4 <= param_lambda_l2 and param_lambda_l2 <= 1e6 \
+                    and 1e-1 <= param_min_gain_to_split and param_min_gain_to_split <= 1 \
+                    and 1 <= param_min_data_per_group and param_min_data_per_group <= 3000 \
+                    and ((1 <= param_scale_pos_weight and param_scale_pos_weight <= 8) \
+                         or (param_scale_pos_weight != param_scale_pos_weight)) \
+                    and 1 <= param_min_data_in_bin and param_min_data_in_bin <= 3000''')
+
+
+def read_narrow(files):
+    for f in files:
+        yield pd.read_pickle(f)\
+            .assign(file=f)\
+            .pipe(narrow_filter)
+
+
+def top_mean_dev_auc(dfs, n):
+    return pd.concat(list(map(lambda df: df.sort_values('mean_dev_auc', ascending=False).iloc[:n], dfs)),
+                  ignore_index=True, sort=True)\
+            .sort_values('mean_dev_auc', ascending=False).iloc[:n]
+
+
+def top_mean_validation_auc(dfs, n):
+    return pd.concat(list(map(lambda df: df.sort_values('mean_validation_auc', ascending=False).iloc[:n], dfs)),
+                  ignore_index=True, sort=True)\
+            .sort_values('mean_validation_auc', ascending=False).iloc[:n]
+
+
+def rolling_min_dev_auc(dfs, n, window):
+    return pd.concat(
+        list(map(lambda df: df
+                 .sort_values('iteration')\
+                 .assign(rolling_min_dev_auc=lambda x: x\
+                         .groupby('experiment_id')\
+                         .rolling(window, min_periods=1, center=True)\
+                         .mean_dev_auc.min()\
+                         .reset_index(0,drop=True)
+                        )\
+                 .sort_values('rolling_min_dev_auc', ascending=False).iloc[:n], dfs)),
+        ignore_index=True, sort=True)\
+    .sort_values('rolling_min_dev_auc', ascending=False).iloc[:n]
