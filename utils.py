@@ -145,6 +145,12 @@ def read_telecom_churn():
     X_train, X_val, y_train, y_val = train_test_split(
         X, y, test_size=0.2, stratify=y, random_state=834936)
 
+    whole_train = lgb.Dataset(
+        X_train,
+        label=y_train,
+        group=[X_train.shape[0]],
+        free_raw_data=False
+    )
     validation = lgb.Dataset(
         X_val,
         label=y_val,
@@ -164,7 +170,7 @@ def read_telecom_churn():
         in StratifiedKFold(n_splits=N_FOLDS,
                            random_state=9342).split(X_train, y_train)
     ]
-    return folds, validation
+    return folds, validation, whole_train
 
 
 def parse_args():
@@ -251,8 +257,8 @@ def log_json(file, data):
         print(json.dumps(data), file=output, flush=True)
 
 
-def evaluate_experiment(experiment, folds, validation, experiment_name,
-                        log_file, log_lock, num_boost_round):
+def evaluate_experiment(experiment, folds, validation, whole_train,
+                        experiment_name, log_file, log_lock, num_boost_round):
 
     experiment_id, parameters = experiment
 
@@ -276,10 +282,21 @@ def evaluate_experiment(experiment, folds, validation, experiment_name,
                       evals_result=eval_result,
                       num_boost_round=num_boost_round,
                       verbose_eval=False)
-
             for data_name, scores in eval_result.items():
                 for score_name, score_values in scores.items():
                     metrics[f'split{fold}_{data_name}_{score_name}'] = score_values
+
+        whole_result = {}
+        lgb.train(parameters,
+                  whole_train,
+                  valid_sets=[whole_train, validation],
+                  valid_names=['train', 'validation'],
+                  evals_result=whole_result,
+                  num_boost_round=num_boost_round,
+                  verbose_eval=False)
+        for data_name, scores in whole_result.items():
+            for score_name, score_values in scores.items():
+                metrics[f'whole_{data_name}_{score_name}'] = score_values
 
         metrics['success'] = True
         log_data.update(metrics)
