@@ -265,48 +265,53 @@ def evaluate_experiment(experiment, folds, validation, whole_train,
     if parameters['is_unbalance']:
         parameters['scale_pos_weight'] = None
 
-    log_data = {'param_' + k: v for k, v in parameters.items()}
+    log_data = {}
     log_data['name'] = experiment_name
     log_data['experiment_id'] = experiment_id
 
-    try:
-        metrics = {}
-        for fold in range(len(folds)):
-            train, dev = folds[fold]
+    root_seed = parameters['seed']
+    for sub_seed in range(N_SEEDS):
+        parameters['seed'] = root_seed + sub_seed
+        log_data = {'param_' + k: v for k, v in parameters.items()}
 
-            eval_result = {}
+        try:
+            metrics = {}
+            for fold in range(len(folds)):
+                train, dev = folds[fold]
+
+                eval_result = {}
+                lgb.train(parameters,
+                          train,
+                          valid_sets=[train, dev, validation],
+                          valid_names=['train', 'dev', 'validation'],
+                          evals_result=eval_result,
+                          num_boost_round=num_boost_round,
+                          verbose_eval=False)
+                for data_name, scores in eval_result.items():
+                    for score_name, score_values in scores.items():
+                        metrics[f'split{fold}_{data_name}_{score_name}'] = score_values
+
+            whole_result = {}
             lgb.train(parameters,
-                      train,
-                      valid_sets=[train, dev, validation],
-                      valid_names=['train', 'dev', 'validation'],
-                      evals_result=eval_result,
+                      whole_train,
+                      valid_sets=[whole_train, validation],
+                      valid_names=['train', 'validation'],
+                      evals_result=whole_result,
                       num_boost_round=num_boost_round,
                       verbose_eval=False)
-            for data_name, scores in eval_result.items():
+            for data_name, scores in whole_result.items():
                 for score_name, score_values in scores.items():
-                    metrics[f'split{fold}_{data_name}_{score_name}'] = score_values
+                    metrics[f'whole_{data_name}_{score_name}'] = score_values
 
-        whole_result = {}
-        lgb.train(parameters,
-                  whole_train,
-                  valid_sets=[whole_train, validation],
-                  valid_names=['train', 'validation'],
-                  evals_result=whole_result,
-                  num_boost_round=num_boost_round,
-                  verbose_eval=False)
-        for data_name, scores in whole_result.items():
-            for score_name, score_values in scores.items():
-                metrics[f'whole_{data_name}_{score_name}'] = score_values
+            metrics['success'] = True
+            log_data.update(metrics)
 
-        metrics['success'] = True
-        log_data.update(metrics)
-
-    except Exception as e:
-        warnings.warn(f'got Exception "{e}" for parameters {parameters}')
-        traceback.print_exc(file=sys.stderr)  # TODO use logger instead
-    finally:
-        with log_lock:
-            log_json(log_file, log_data)
+        except Exception as e:
+            warnings.warn(f'got Exception "{e}" for parameters {parameters}')
+            traceback.print_exc(file=sys.stderr)  # TODO use logger instead
+        finally:
+            with log_lock:
+                log_json(log_file, log_data)
 
 
 def summarize_logs(df):
