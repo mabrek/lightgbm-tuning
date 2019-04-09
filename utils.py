@@ -6,6 +6,7 @@ __all__ = [
     'read_summarized_logs',
     'check_omitted_parameters',
     'N_FOLDS',
+    'N_SEEDS',
     'EVAL_AT',
     'METRICS',
     'DATA_METRICS',
@@ -60,9 +61,8 @@ warnings.filterwarnings("ignore",
                         category=UserWarning,
                         module='lightgbm.basic')
 
-
-
 N_FOLDS = 5
+N_SEEDS = 3
 
 EVAL_AT = [10, 100, 1000]
 
@@ -178,11 +178,11 @@ def parse_args():
     return parser.parse_args()
 
 
-def run_pool(parameter_space, args, parameters_evaluator):
+def run_pool(parameter_space, args, evaluator):
     with Pool(processes=args.processes) as pool:
         results = pool.imap_unordered(
-            parameters_evaluator,
-            ParameterSampler(parameter_space, args.iterations),
+            evaluator,
+            enumerate(ParameterSampler(parameter_space, args.iterations)),
             chunksize=args.chunksize)
         for r in results:
             print('.', end='', flush=True)
@@ -251,13 +251,17 @@ def log_json(file, data):
         print(json.dumps(data), file=output, flush=True)
 
 
-def evaluate_parameters(parameters, folds, validation, experiment_name,
+def evaluate_experiment(experiment, folds, validation, experiment_name,
                         log_file, log_lock, num_boost_round):
+
+    experiment_id, parameters = experiment
+
     if parameters['is_unbalance']:
         parameters['scale_pos_weight'] = None
 
     log_data = {'param_' + k: v for k, v in parameters.items()}
     log_data['name'] = experiment_name
+    log_data['experiment_id'] = experiment_id
 
     try:
         metrics = {}
@@ -308,7 +312,10 @@ def summarize_logs(df):
             iterations['val_dev_diff_' + m] =\
                 iterations['mean_validation_' + m] - iterations['mean_dev_' + m]
 
-        iterations['experiment_id'] = row.Index
+        if 'experiment_id' in row._fields:
+            iterations['experiment_id'] = row.experiment_id
+        else:
+            iterations['experiment_id'] = row.Index
 
         iterations.index.name = 'iteration'
         iterations.reset_index(inplace=True)
@@ -340,7 +347,11 @@ def unfold_iterations(df):
                 iterations['val_dev_diff_' + m] =\
                     iterations['validation_' + m] - iterations['dev_' + m]
 
-            iterations['experiment_id'] = row.Index
+            if 'experiment_id' in row._fields:
+                iterations['experiment_id'] = row.experiment_id
+            else:
+                iterations['experiment_id'] = row.Index
+
             iterations['split'] = s
 
             iterations.index.name = 'iteration'

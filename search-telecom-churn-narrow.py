@@ -6,7 +6,7 @@ from scipy.stats import randint as randint
 from scipy.stats import uniform as uniform
 
 from utils import loguniform, EVAL_AT, parse_args, read_telecom_churn,\
-    evaluate_parameters, run_pool
+    evaluate_experiment, run_pool
 
 if __name__ == "__main__":
     parameter_space = {
@@ -53,9 +53,10 @@ if __name__ == "__main__":
     log_lock = Lock()
     folds, validation = read_telecom_churn()
 
-    def parameters_evaluator(parameters):
-        evaluate_parameters(
-            parameters,
+    # captures data and lock to use in forked processes
+    def evaluator(experiment):
+        evaluate_experiment(
+            experiment,
             folds=folds,
             validation=validation,
             experiment_name=args.name,
@@ -64,4 +65,4 @@ if __name__ == "__main__":
             num_boost_round=500
         )
 
-    run_pool(parameter_space, args, parameters_evaluator)
+    run_pool(parameter_space, args, evaluator)
