@@ -50,9 +50,12 @@ import lightgbm as lgb
 
 from bokeh.plotting import figure
 
-import datashader as ds
-import datashader.transfer_functions as tf
-from datashader.bokeh_ext import InteractiveImage
+try:
+    import datashader as ds
+    import datashader.transfer_functions as tf
+    from datashader.bokeh_ext import InteractiveImage
+except ImportError as e:
+    warnings.warn(f'exception "{e}" while importing datashader, plotting will be unavailable')
 
 
 logging.basicConfig(level=logging.INFO)
