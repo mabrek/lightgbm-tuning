@@ -12,6 +12,7 @@ __all__ = [
     'DATA_METRICS',
     'SPLITS',
     'SPLIT_METRICS',
+    'WHOLE_METRICS',
     'CONT_PARAMETERS',
     'LOG_PARAMETERS',
     'SET_PARAMETERS',
@@ -79,6 +80,10 @@ DATA_METRICS = ['_'.join([d, m])
 SPLITS = ['split' + str(i) for i in range(N_FOLDS)]
 
 SPLIT_METRICS = ['_'.join([s, m]) for s, m in product(SPLITS, DATA_METRICS)]
+
+WHOLE_METRICS = ['_'.join([d, m])
+                 for d, m
+                 in product(['whole_train', 'whole_validation'], METRICS)]
 
 CONT_PARAMETERS = [
     'param_bagging_fraction',
