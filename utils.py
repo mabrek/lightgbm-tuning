@@ -328,19 +328,18 @@ def summarize_logs(df):
     rows = []
     for row in df.itertuples():
         iterations = pd.DataFrame(
-            {k: getattr(row, k) for k in row._fields if k in SPLIT_METRICS})
+            {k: getattr(row, k)
+             for k in row._fields
+             if k in SPLIT_METRICS + WHOLE_METRICS})
 
         for m in DATA_METRICS:
             c = ['_'.join([s, m]) for s in SPLITS]
             iterations['mean_' + m] = iterations[c].mean(axis=1)
-            iterations['range_' + m] = iterations[c].max(axis=1) - iterations[c].min(axis=1)
             iterations.drop(c, axis=1, inplace=True)  # TODO make optional
 
         for m in METRICS:
             iterations['dev_train_diff_' + m] =\
                 iterations['mean_dev_' + m] - iterations['mean_train_' + m]
-            iterations['val_dev_diff_' + m] =\
-                iterations['mean_validation_' + m] - iterations['mean_dev_' + m]
 
         if 'experiment_id' in row._fields:
             iterations['experiment_id'] = row.experiment_id
