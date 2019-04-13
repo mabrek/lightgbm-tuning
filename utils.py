@@ -354,7 +354,7 @@ def summarize_logs(df):
 
     split_summaries = pd.concat(rows, ignore_index=True, copy=False)
 
-    return split_summaries.join(df.drop(columns=SPLIT_METRICS), on='experiment_id')
+    return split_summaries.join(df.drop(columns=(SPLIT_METRICS + WHOLE_METRICS)), on='experiment_id')
 
 
 def unfold_iterations(df):
