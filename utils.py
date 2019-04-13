@@ -287,15 +287,15 @@ def evaluate_experiment(experiment, folds, validation, whole_train,
             for fold in range(len(folds)):
                 train, dev = folds[fold]
 
-                eval_result = {}
+                split_result = {}
                 lgb.train(parameters,
                           train,
                           valid_sets=[train, dev, validation],
                           valid_names=['train', 'dev', 'validation'],
-                          evals_result=eval_result,
+                          evals_result=split_result,
                           num_boost_round=num_boost_round,
                           verbose_eval=False)
-                for data_name, scores in eval_result.items():
+                for data_name, scores in split_result.items():
                     for score_name, score_values in scores.items():
                         metrics[f'split{fold}_{data_name}_{score_name}'] = score_values
 
