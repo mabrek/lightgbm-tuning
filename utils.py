@@ -373,8 +373,6 @@ def unfold_iterations(df):
             for m in METRICS:
                 iterations['dev_train_diff_' + m] =\
                     iterations['dev_' + m] - iterations['train_' + m]
-                iterations['val_dev_diff_' + m] =\
-                    iterations['validation_' + m] - iterations['dev_' + m]
 
             if 'experiment_id' in row._fields:
                 iterations['experiment_id'] = row.experiment_id
