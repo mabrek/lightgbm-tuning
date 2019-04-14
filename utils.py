@@ -340,6 +340,8 @@ def summarize_logs(df):
             iterations.drop(c, axis=1, inplace=True)
 
         for m in WHOLE_METRICS:
+            if m not in df.columns:
+                continue
             iterations['mean_' + m] = iterations[m]
             iterations['min_' + m] = iterations[m]
             iterations['max_' + m] = iterations[m]
