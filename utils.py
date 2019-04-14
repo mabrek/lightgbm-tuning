@@ -327,13 +327,23 @@ def summarize_logs(df):
 
     rows = []
     for row in df.itertuples():
-        iterations = pd.DataFrame({k: getattr(row, k) for k in row._fields
-                                   if k != 'Index'})
+        iterations = pd.DataFrame.from_dict({k: pd.Series(getattr(row, k))
+                                             for k in row._fields
+                                             if k != 'Index'})
 
         for m in SUBSET_METRICS:
             c = ['_'.join([s, m]) for s in SPLITS]
             iterations['mean_' + m] = iterations[c].mean(axis=1)
+            if m.startswith('validation_'):
+                iterations['min_' + m] = iterations[c].min(axis=1)
+                iterations['max_' + m] = iterations[c].max(axis=1)
             iterations.drop(c, axis=1, inplace=True)
+
+        for m in WHOLE_METRICS:
+            iterations['mean_' + m] = iterations[m]
+            iterations['min_' + m] = iterations[m]
+            iterations['max_' + m] = iterations[m]
+            iterations.drop(m, axis=1, inplace=True)
 
         if 'experiment_id' not in row._fields:
             iterations['experiment_id'] = row.Index
@@ -344,8 +354,20 @@ def summarize_logs(df):
 
         rows.append(iterations)
 
-    # TODO group by exp id to average out seed
-    return pd.concat(rows, ignore_index=True, copy=False)
+    all_seeds = pd.concat(rows, ignore_index=True, copy=False)
+
+    aggregations = {}
+    for c in all_seeds.columns:
+        if c.startswith('mean_'):
+            aggregations[c] = np.mean
+        elif c.startswith('min_'):
+            aggregations[c] = np.min
+        elif c.startswith('max_'):
+            aggregations[c] = np.max
+        else:
+            aggregations[c] = lambda x: x.iloc[0]
+
+    return all_seeds.groupby(['experiment_id', 'iteration']).agg(aggregations)
 
 
 def unfold_iterations(df):
