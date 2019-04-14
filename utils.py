@@ -367,7 +367,10 @@ def summarize_logs(df):
         else:
             aggregations[c] = lambda x: x.iloc[0]
 
-    return all_seeds.groupby(['experiment_id', 'iteration']).agg(aggregations)
+    return all_seeds\
+        .groupby(['experiment_id', 'iteration'])\
+        .agg(aggregations)\
+        .reset_index(drop=True)
 
 
 def unfold_iterations(df):
