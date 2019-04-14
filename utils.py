@@ -378,10 +378,13 @@ def summarize_logs(df):
 def unfold_iterations(df):
     df = df[df.success.fillna(False)].rename(columns=lambda x: x.replace('@', '_'))
 
+    if set(WHOLE_METRICS).issubset(set(df.columns)):
+        splits = list(chain([-1], range(N_FOLDS)))
+    else:
+        splits = list(range(N_FOLDS))
     rows = []
     for row in df.itertuples():
-
-        for s in chain([-1], range(N_FOLDS)):
+        for s in splits:
             if s == -1:
                 one_split_metrics = {m: m.replace('whole_', '', 1)
                                      for m in WHOLE_METRICS}
