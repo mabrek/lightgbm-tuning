@@ -36,7 +36,7 @@ import traceback
 import sys
 from datetime import datetime
 import json
-from itertools import product
+from itertools import product, chain
 from multiprocessing import Pool
 import logging
 import argparse
@@ -381,20 +381,22 @@ def unfold_iterations(df):
     rows = []
     for row in df.itertuples():
 
-        for s in range(N_FOLDS):
-            one_split_metrics = {'split' + str(s) + '_' + m: m for m in SUBSET_METRICS}
+        for s in chain([-1], range(N_FOLDS)):
+            if s == -1:
+                one_split_metrics = {m: m.replace('whole_', '', 1)
+                                     for m in WHOLE_METRICS}
+            else:
+                one_split_metrics = {'split' + str(s) + '_' + m: m
+                                     for m in SUBSET_METRICS}
 
             iterations = pd.DataFrame(
-                {one_split_metrics[k]: getattr(row, k)
-                 for k in row._fields if k in one_split_metrics.keys()})
+                {one_split_metrics.get(k, k): pd.Series(getattr(row, k))
+                 for k in row._fields
+                 if k != 'Index' and (k in one_split_metrics
+                                      or (not k.startswith('split')
+                                          and not k.startswith('whole_')))})
 
-            for m in METRICS:
-                iterations['dev_train_diff_' + m] =\
-                    iterations['dev_' + m] - iterations['train_' + m]
-
-            if 'experiment_id' in row._fields:
-                iterations['experiment_id'] = row.experiment_id
-            else:
+            if 'experiment_id' not in row._fields:
                 iterations['experiment_id'] = row.Index
 
             iterations['split'] = s
@@ -405,9 +407,7 @@ def unfold_iterations(df):
 
             rows.append(iterations)
 
-    split_data = pd.concat(rows, ignore_index=True, copy=False)
-
-    return split_data.join(df.drop(columns=SPLIT_METRICS), on='experiment_id')
+    return pd.concat(rows, ignore_index=True, copy=False, sort=True)
 
 
 def drop_boring_columns(df):
