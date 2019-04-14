@@ -73,13 +73,13 @@ EVAL_AT = [10, 100, 1000]
 METRICS = ['binary_logloss', 'auc', 'binary_error', 'kldiv']\
     + [f'map_{i}' for i in EVAL_AT]
 
-DATA_METRICS = ['_'.join([d, m])
+SUBSET_METRICS = ['_'.join([d, m])
                 for d, m
                 in product(['train', 'dev', 'validation'], METRICS)]
 
 SPLITS = ['split' + str(i) for i in range(N_FOLDS)]
 
-SPLIT_METRICS = ['_'.join([s, m]) for s, m in product(SPLITS, DATA_METRICS)]
+SPLIT_METRICS = ['_'.join([s, m]) for s, m in product(SPLITS, SUBSET_METRICS)]
 
 WHOLE_METRICS = ['_'.join([d, m])
                  for d, m
@@ -332,7 +332,7 @@ def summarize_logs(df):
              for k in row._fields
              if k in SPLIT_METRICS + WHOLE_METRICS})
 
-        for m in DATA_METRICS:
+        for m in SUBSET_METRICS:
             c = ['_'.join([s, m]) for s in SPLITS]
             iterations['mean_' + m] = iterations[c].mean(axis=1)
             iterations.drop(c, axis=1, inplace=True)  # TODO make optional
@@ -350,6 +350,7 @@ def summarize_logs(df):
 
     split_summaries = pd.concat(rows, ignore_index=True, copy=False)
 
+    # TODO group by exp id to average out seed
     return split_summaries.join(df.drop(columns=(SPLIT_METRICS + WHOLE_METRICS)), on='experiment_id')
 
 
@@ -360,7 +361,7 @@ def unfold_iterations(df):
     for row in df.itertuples():
 
         for s in range(N_FOLDS):
-            one_split_metrics = {'split' + str(s) + '_' + m: m for m in DATA_METRICS}
+            one_split_metrics = {'split' + str(s) + '_' + m: m for m in SUBSET_METRICS}
 
             iterations = pd.DataFrame(
                 {one_split_metrics[k]: getattr(row, k)
