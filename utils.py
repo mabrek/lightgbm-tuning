@@ -9,7 +9,7 @@ __all__ = [
     'N_SEEDS',
     'EVAL_AT',
     'METRICS',
-    'DATA_METRICS',
+    'SUBSET_METRICS',
     'SPLITS',
     'SPLIT_METRICS',
     'WHOLE_METRICS',
@@ -327,19 +327,15 @@ def summarize_logs(df):
 
     rows = []
     for row in df.itertuples():
-        iterations = pd.DataFrame(
-            {k: getattr(row, k)
-             for k in row._fields
-             if k in SPLIT_METRICS + WHOLE_METRICS})
+        iterations = pd.DataFrame({k: getattr(row, k) for k in row._fields
+                                   if k != 'Index'})
 
         for m in SUBSET_METRICS:
             c = ['_'.join([s, m]) for s in SPLITS]
             iterations['mean_' + m] = iterations[c].mean(axis=1)
-            iterations.drop(c, axis=1, inplace=True)  # TODO make optional
+            iterations.drop(c, axis=1, inplace=True)
 
-        if 'experiment_id' in row._fields:
-            iterations['experiment_id'] = row.experiment_id
-        else:
+        if 'experiment_id' not in row._fields:
             iterations['experiment_id'] = row.Index
 
         iterations.index.name = 'iteration'
@@ -348,10 +344,8 @@ def summarize_logs(df):
 
         rows.append(iterations)
 
-    split_summaries = pd.concat(rows, ignore_index=True, copy=False)
-
     # TODO group by exp id to average out seed
-    return split_summaries.join(df.drop(columns=(SPLIT_METRICS + WHOLE_METRICS)), on='experiment_id')
+    return pd.concat(rows, ignore_index=True, copy=False)
 
 
 def unfold_iterations(df):
