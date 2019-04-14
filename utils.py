@@ -88,6 +88,7 @@ WHOLE_METRICS = ['_'.join([d, m])
 CONT_PARAMETERS = [
     'param_bagging_fraction',
     'param_feature_fraction',
+    'param_scale_pos_weight',
     'iteration'
 ]
 
@@ -99,8 +100,7 @@ LOG_PARAMETERS = [
     'param_lambda_l2',
     'param_min_gain_to_split', 
     'param_cat_l2',
-    'param_cat_smooth', 
-    'param_scale_pos_weight'
+    'param_cat_smooth'
 ]
 
 SET_PARAMETERS = [
