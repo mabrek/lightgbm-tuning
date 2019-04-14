@@ -280,7 +280,7 @@ def evaluate_experiment(experiment, folds, validation, whole_train,
     root_seed = parameters['seed']
     for sub_seed in range(N_SEEDS):
         parameters['seed'] = root_seed + sub_seed
-        log_data = {'param_' + k: v for k, v in parameters.items()}
+        log_data.update({'param_' + k: v for k, v in parameters.items()})
 
         try:
             metrics = {}
