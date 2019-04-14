@@ -337,10 +337,6 @@ def summarize_logs(df):
             iterations['mean_' + m] = iterations[c].mean(axis=1)
             iterations.drop(c, axis=1, inplace=True)  # TODO make optional
 
-        for m in METRICS:
-            iterations['dev_train_diff_' + m] =\
-                iterations['mean_dev_' + m] - iterations['mean_train_' + m]
-
         if 'experiment_id' in row._fields:
             iterations['experiment_id'] = row.experiment_id
         else:
