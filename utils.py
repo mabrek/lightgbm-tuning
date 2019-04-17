@@ -357,6 +357,7 @@ def summarize_logs(df):
         rows.append(iterations)
 
     all_seeds = pd.concat(rows, ignore_index=True, copy=False)
+    all_seeds['cnt'] = 1
 
     aggregations = {}
     for c in all_seeds.columns:
@@ -366,6 +367,8 @@ def summarize_logs(df):
             aggregations[c] = np.min
         elif c.startswith('max_'):
             aggregations[c] = np.max
+        elif c == 'cnt':
+            aggregations[c] = np.sum
         else:
             aggregations[c] = lambda x: x.iloc[0]
 
