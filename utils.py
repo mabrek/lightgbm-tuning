@@ -424,9 +424,33 @@ def drop_boring_columns(df):
 
 def read_summarized_logs(f, chunksize=1000):
     logs = read_json_log(f, chunksize)
-    unfolded = map(summarize_logs, logs)
-    cleaned = map(drop_boring_columns, unfolded)
-    return pd.concat(list(cleaned), ignore_index=True, sort=True)
+    summarized = pd.concat(
+        list(map(summarize_logs, logs)),
+        ignore_index=True, sort=True)
+
+    aggregations = {}
+    for c in summarized.columns:
+        if c.startswith('mean_'):
+            summarized[c] = summarized[c] * summarized.cnt
+            aggregations[c] = np.sum
+        elif c.startswith('min_'):
+            aggregations[c] = np.min
+        elif c.startswith('max_'):
+            aggregations[c] = np.max
+        elif c == 'cnt':
+            aggregations[c] = np.sum
+        else:
+            aggregations[c] = lambda x: x.iloc[0]
+
+    regrouped = summarized\
+        .groupby(['experiment_id'])\
+        .aggregate(aggregations)
+
+    for c in regrouped.columns:
+        if c.startswith('mean_'):
+            regrouped[c] = regrouped[c] / regrouped.cnt
+
+    return drop_boring_columns(regrouped.drop(columns=['cnt']))
 
 
 def read_full_logs(f, chunksize=1000):
