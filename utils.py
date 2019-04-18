@@ -419,7 +419,7 @@ def unfold_iterations(df):
 def drop_boring_columns(df):
     return df.dropna(how='all', axis='columns')\
         .drop(columns=['param_eval_at', 'param_metric'], errors='ignore')\
-        .pipe(lambda x: x.loc[:, x.nunique() != 1])
+        .pipe(lambda x: x.loc[:, (x.nunique() != 1) | (x.columns == 'cnt')])
 
 
 def read_summarized_logs(f, chunksize=1000):
