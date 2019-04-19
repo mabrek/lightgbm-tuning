@@ -468,8 +468,8 @@ def read_summarized_logs(f, chunksize=1000, exclude=None):
 def read_full_logs(f, chunksize=1000):
     logs = read_json_log(f, chunksize)
     tidy = map(unfold_iterations, logs)
-    cleaned = map(drop_boring_columns, tidy)
-    return pd.concat(list(cleaned), ignore_index=True, sort=True)
+    return drop_boring_columns(
+        pd.concat(list(tidy), ignore_index=True, sort=True))
 
 
 def check_omitted_parameters(df):
