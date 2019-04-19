@@ -475,9 +475,9 @@ def read_summarized_logs(f, chunksize=1000, exclude=None):
         .drop(columns=['cnt'])
 
 
-def read_full_logs(f, chunksize=1000):
+def read_full_logs(f, chunksize=1000, exclude=None):
     logs = read_json_log(f, chunksize)
-    tidy = map(unfold_iterations, logs)
+    tidy = map(partial(unfold_iterations, exclude=exclude), logs)
     return drop_boring_columns(
         pd.concat(list(tidy), ignore_index=True, sort=True))
 
