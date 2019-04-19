@@ -40,6 +40,7 @@ from itertools import product, chain
 from multiprocessing import Pool
 import logging
 import argparse
+from functools import partial
 
 import numpy as np
 import pandas as pd
@@ -322,7 +323,10 @@ def evaluate_experiment(experiment, folds, validation, whole_train,
                 log_json(log_file, log_data)
 
 
-def summarize_logs(df):
+def summarize_logs(df, exclude=None):
+    if exclude is not None:
+        df = df.loc[:, df.columns[~df.columns.str.contains(exclude)]]
+
     df = df[df.success.fillna(False)].rename(columns=lambda x: x.replace('@', '_'))
 
     rows = []
@@ -334,6 +338,8 @@ def summarize_logs(df):
 
         for m in SUBSET_METRICS:
             c = ['_'.join([s, m]) for s in SPLITS]
+            if c[0] not in df.columns:
+                continue
             iterations['mean_' + m] = iterations[c].mean(axis=1)
             if m.startswith('validation_'):
                 iterations['min_' + m] = iterations[c].min(axis=1)
@@ -423,10 +429,14 @@ def drop_boring_columns(df):
         .pipe(lambda x: x.loc[:, (x.nunique() != 1) | (x.columns == 'cnt')])
 
 
-def read_summarized_logs(f, chunksize=1000):
+def read_summarized_logs(f, chunksize=1000, exclude=None):
     logs = read_json_log(f, chunksize)
     summarized = pd.concat(
-        list(map(summarize_logs, logs)),
+        list(
+            map(
+                partial(summarize_logs, exclude=exclude),
+                logs)
+        ),
         ignore_index=True, sort=True)
 
     aggregations = {}
