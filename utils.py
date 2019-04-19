@@ -371,7 +371,7 @@ def summarize_logs(df):
         elif c == 'cnt':
             aggregations[c] = np.sum
         else:
-            aggregations[c] = lambda x: x.iloc[0]
+            aggregations[c] = np.min  # min is faster than lambda with .iloc[0]
 
     return all_seeds\
         .groupby(['experiment_id', 'iteration'])\
@@ -441,7 +441,7 @@ def read_summarized_logs(f, chunksize=1000):
         elif c == 'cnt':
             aggregations[c] = np.sum
         else:
-            aggregations[c] = lambda x: x.iloc[0]
+            aggregations[c] = np.min  # min is faster than lambda with .iloc[0]
 
     regrouped = summarized\
         .groupby(['experiment_id', 'iteration'])\
