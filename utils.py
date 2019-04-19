@@ -28,7 +28,8 @@ __all__ = [
     'narrow_filter',
     'parse_args',
     'read_telecom_churn',
-    'run_pool'
+    'run_pool',
+    'exclude_columns'
 ]
 
 import warnings
@@ -323,11 +324,17 @@ def evaluate_experiment(experiment, folds, validation, whole_train,
                 log_json(log_file, log_data)
 
 
-def summarize_logs(df, exclude=None):
-    if exclude is not None:
-        df = df.loc[:, df.columns[~df.columns.str.contains(exclude)]]
+def exclude_columns(df, pattern=None):
+    if pattern is not None:
+        return df.loc[:, df.columns[~df.columns.str.contains(pattern)]]
+    else:
+        return df
 
-    df = df[df.success.fillna(False)].rename(columns=lambda x: x.replace('@', '_'))
+
+def summarize_logs(df, exclude=None):
+    df = df[df.success.fillna(False)]\
+        .pipe(exclude_columns, pattern=exclude)\
+        .rename(columns=lambda x: x.replace('@', '_'))
 
     rows = []
     for row in df.itertuples():
