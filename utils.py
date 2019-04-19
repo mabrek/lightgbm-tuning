@@ -444,14 +444,15 @@ def read_summarized_logs(f, chunksize=1000):
             aggregations[c] = lambda x: x.iloc[0]
 
     regrouped = summarized\
-        .groupby(['experiment_id'])\
+        .groupby(['experiment_id', 'iteration'])\
         .aggregate(aggregations)
 
     for c in regrouped.columns:
         if c.startswith('mean_'):
             regrouped[c] = regrouped[c] / regrouped.cnt
 
-    return drop_boring_columns(regrouped.drop(columns=['cnt']))
+    return drop_boring_columns(regrouped.reset_index(drop=True))\
+        .drop(columns=['cnt'])
 
 
 def read_full_logs(f, chunksize=1000):
