@@ -392,8 +392,10 @@ def summarize_logs(df, exclude=None):
         .reset_index(drop=True)
 
 
-def unfold_iterations(df):
-    df = df[df.success.fillna(False)].rename(columns=lambda x: x.replace('@', '_'))
+def unfold_iterations(df, exclude=None):
+    df = df[df.success.fillna(False)]\
+        .pipe(exclude_columns, pattern=exclude)\
+        .rename(columns=lambda x: x.replace('@', '_'))
 
     if set(WHOLE_METRICS).issubset(set(df.columns)):
         splits = list(chain([-1], range(N_FOLDS)))
@@ -410,11 +412,12 @@ def unfold_iterations(df):
                                      for m in SUBSET_METRICS}
 
             iterations = pd.DataFrame(
-                {one_split_metrics.get(k, k): pd.Series(getattr(row, k))
+                {one_split_metrics.get(k, k): getattr(row, k)
                  for k in row._fields
-                 if k != 'Index' and (k in one_split_metrics
-                                      or (not k.startswith('split')
-                                          and not k.startswith('whole_')))})
+                 if (k not in ['Index', 'param_eval_at', 'param_metric']
+                     and (k in one_split_metrics
+                          or (not k.startswith('split')
+                              and not k.startswith('whole_'))))})
 
             if 'experiment_id' not in row._fields:
                 iterations['experiment_id'] = row.Index
