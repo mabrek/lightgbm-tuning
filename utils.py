@@ -327,9 +327,10 @@ def summarize_logs(df):
 
     rows = []
     for row in df.itertuples():
-        iterations = pd.DataFrame.from_dict({k: pd.Series(getattr(row, k))
-                                             for k in row._fields
-                                             if k != 'Index'})
+        iterations = pd.DataFrame(
+            {k: getattr(row, k)
+             for k in row._fields
+             if k not in ['Index', 'param_eval_at', 'param_metric']})
 
         for m in SUBSET_METRICS:
             c = ['_'.join([s, m]) for s in SPLITS]
