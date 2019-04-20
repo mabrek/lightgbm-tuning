@@ -37,7 +37,7 @@ import traceback
 import sys
 from datetime import datetime
 import json
-from itertools import product, chain
+from itertools import product, chain, islice
 from multiprocessing import Pool
 import logging
 import argparse
@@ -475,8 +475,10 @@ def read_summarized_logs(f, chunksize=1000, exclude=None):
         .drop(columns=['cnt'])
 
 
-def read_full_logs(f, chunksize=1000, exclude=None):
+def read_full_logs(f, chunksize=1000, chunks=None, exclude=None):
     logs = read_json_log(f, chunksize)
+    if chunks is not None:
+        logs = islice(logs, chunks)
     tidy = map(partial(unfold_iterations, exclude=exclude), logs)
     return drop_boring_columns(
         pd.concat(list(tidy), ignore_index=True, sort=True))
