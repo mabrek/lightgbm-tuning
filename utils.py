@@ -370,7 +370,7 @@ def summarize_logs(df, exclude=None):
 
         rows.append(iterations)
 
-    all_seeds = pd.concat(rows, ignore_index=True, copy=False)
+    all_seeds = pd.concat(rows, ignore_index=True)
     all_seeds['cnt'] = 1
 
     aggregations = {}
@@ -430,7 +430,7 @@ def unfold_iterations(df, exclude=None):
 
             rows.append(iterations)
 
-    return pd.concat(rows, ignore_index=True, copy=False, sort=True)
+    return pd.concat(rows, ignore_index=True, sort=True)
 
 
 def drop_boring_columns(df):
