@@ -23,7 +23,9 @@ __all__ = [
     'shaderdots',
     'read_narrow',
     'top_mean_dev_auc',
+    'top_min_dev_auc'
     'top_mean_validation_auc',
+    'top_min_validation_auc',
     'rolling_min_dev_auc',
     'top_min_whole_validation_auc',
     'rolling_min_min_dev_auc',
@@ -545,10 +547,22 @@ def top_mean_dev_auc(dfs, n):
             .sort_values('mean_dev_auc', ascending=False).iloc[:n]
 
 
+def top_min_dev_auc(dfs, n):
+    return pd.concat(list(map(lambda df: df.sort_values('min_dev_auc', ascending=False).iloc[:n], dfs)),
+                  ignore_index=True, sort=True)\
+            .sort_values('min_dev_auc', ascending=False).iloc[:n]
+
+
 def top_mean_validation_auc(dfs, n):
     return pd.concat(list(map(lambda df: df.sort_values('mean_validation_auc', ascending=False).iloc[:n], dfs)),
                   ignore_index=True, sort=True)\
             .sort_values('mean_validation_auc', ascending=False).iloc[:n]
+
+
+def top_min_validation_auc(dfs, n):
+    return pd.concat(list(map(lambda df: df.sort_values('min_validation_auc', ascending=False).iloc[:n], dfs)),
+                  ignore_index=True, sort=True)\
+            .sort_values('min_validation_auc', ascending=False).iloc[:n]
 
 
 def top_min_whole_validation_auc(dfs, n):
