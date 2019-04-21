@@ -25,6 +25,8 @@ __all__ = [
     'top_mean_dev_auc',
     'top_mean_validation_auc',
     'rolling_min_dev_auc',
+    'top_min_whole_validation_auc',
+    'rolling_min_min_dev_auc',
     'narrow_filter',
     'parse_args',
     'read_telecom_churn',
@@ -549,6 +551,12 @@ def top_mean_validation_auc(dfs, n):
             .sort_values('mean_validation_auc', ascending=False).iloc[:n]
 
 
+def top_min_whole_validation_auc(dfs, n):
+    return pd.concat(list(map(lambda df: df.sort_values('min_whole_validation_auc', ascending=False).iloc[:n], dfs)),
+                  ignore_index=True, sort=True)\
+            .sort_values('min_whole_validation_auc', ascending=False).iloc[:n]
+
+
 def rolling_min_dev_auc(dfs, n, window):
     return pd.concat(
         list(map(lambda df: df
@@ -557,6 +565,21 @@ def rolling_min_dev_auc(dfs, n, window):
                          .groupby('experiment_id')\
                          .rolling(window, min_periods=1, center=True)\
                          .mean_dev_auc.min()\
+                         .reset_index(0,drop=True)
+                        )\
+                 .sort_values('rolling_min_dev_auc', ascending=False).iloc[:n], dfs)),
+        ignore_index=True, sort=True)\
+    .sort_values('rolling_min_dev_auc', ascending=False).iloc[:n]
+
+
+def rolling_min_min_dev_auc(dfs, n, window):
+    return pd.concat(
+        list(map(lambda df: df
+                 .sort_values('iteration')\
+                 .assign(rolling_min_dev_auc=lambda x: x\
+                         .groupby('experiment_id')\
+                         .rolling(window, min_periods=1, center=True)\
+                         .min_dev_auc.min()\
                          .reset_index(0,drop=True)
                         )\
                  .sort_values('rolling_min_dev_auc', ascending=False).iloc[:n], dfs)),
