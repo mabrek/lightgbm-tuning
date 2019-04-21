@@ -350,7 +350,7 @@ def summarize_logs(df, exclude=None):
             if c[0] not in df.columns:
                 continue
             iterations['mean_' + m] = iterations[c].mean(axis=1)
-            if m.startswith('validation_'):
+            if m.startswith('validation_') or m.startswith('dev_'):
                 iterations['min_' + m] = iterations[c].min(axis=1)
                 iterations['max_' + m] = iterations[c].max(axis=1)
             iterations.drop(c, axis=1, inplace=True)
