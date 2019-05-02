@@ -23,7 +23,7 @@ __all__ = [
     'shaderdots',
     'read_narrow',
     'top_mean_dev_auc',
-    'top_min_dev_auc'
+    'top_min_dev_auc',
     'top_mean_validation_auc',
     'top_min_validation_auc',
     'rolling_min_dev_auc',
