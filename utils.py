@@ -278,6 +278,11 @@ def evaluate_experiment(experiment, folds, validation, whole_train,
     if parameters['is_unbalance']:
         parameters['scale_pos_weight'] = None
 
+    if not parameters['bagging_enable']:
+        parameters['bagging_fraction'] = 1
+        parameters['bagging_freq'] = 0
+    del parameters['bagging_enable']
+
     log_data = {}
     log_data['name'] = experiment_name
     log_data['experiment_id'] = experiment_id
