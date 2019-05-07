@@ -32,7 +32,8 @@ __all__ = [
     'parse_args',
     'read_telecom_churn',
     'run_pool',
-    'exclude_columns'
+    'exclude_columns',
+    'read_files'
 ]
 
 import warnings
@@ -543,6 +544,12 @@ def read_narrow(files):
         yield pd.read_pickle(f)\
             .assign(file=f)\
             .pipe(narrow_filter)
+
+
+def read_files(files):
+    for f in files:
+        yield pd.read_pickle(f)\
+            .assign(file=f)
 
 
 def top_mean_dev_auc(dfs, n):
