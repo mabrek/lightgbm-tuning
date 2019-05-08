@@ -22,12 +22,13 @@ if __name__ == "__main__":
         'max_depth': randint(1, 400),
         'min_data_in_leaf': randint(600, 1000),
         'min_sum_hessian_in_leaf': loguniform(low=-10, high=2.5, base=10),
+        'bagging_enable' : [False],
         'bagging_fraction': uniform(loc=0.4, scale=0.4),
-        'bagging_freq': randint(0, 2000),
-        'feature_fraction': uniform(loc=0.3, scale=0.5),
+        'bagging_freq': randint(1, 50),
+        'feature_fraction': uniform(loc=0.2, scale=0.8),
         'max_delta_step': loguniform(low=-4, high=0, base=10),
-        'lambda_l1': loguniform(low=0, high=2.4, base=10),
-        'lambda_l2': loguniform(low=4, high=6, base=10),
+        'lambda_l1': loguniform(low=-10, high=2, base=10),
+        'lambda_l2': loguniform(low=-10, high=10, base=10),
         'min_gain_to_split': loguniform(low=-1, high=0, base=10),
 
         'min_data_per_group': randint(1, 3000),
@@ -36,7 +37,7 @@ if __name__ == "__main__":
         'cat_smooth': loguniform(low=-10, high=10, base=10),
         'max_cat_to_onehot': randint(1, 100),
 
-        'is_unbalance': [False, True],
+        'is_unbalance': [True],
         'scale_pos_weight': uniform(loc=1, scale=7),
         'boost_from_average': [False, True],
 
