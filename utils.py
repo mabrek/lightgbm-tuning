@@ -480,8 +480,7 @@ def read_summarized_logs(f, chunksize=1000, exclude=None):
         if c.startswith('mean_'):
             regrouped[c] = regrouped[c] / regrouped.cnt
 
-    return drop_boring_columns(regrouped.reset_index(drop=True))\
-        .drop(columns=['cnt'])
+    return drop_boring_columns(regrouped.reset_index(drop=True))
 
 
 def read_full_logs(f, chunksize=1000, chunks=None, exclude=None):
