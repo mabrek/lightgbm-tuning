@@ -493,10 +493,10 @@ def aggregate_chunks(chunks_glob):
     return drop_boring_columns(regrouped.reset_index(drop=True))
 
 
-def read_full_logs(f, chunksize=1000, chunks=None, exclude=None):
+def read_full_logs(f, chunksize=1000, n_chunks=None, exclude=None):
     logs = read_json_log(f, chunksize)
-    if chunks is not None:
-        logs = islice(logs, chunks)
+    if n_chunks is not None:
+        logs = islice(logs, n_chunks)
     tidy = map(partial(unfold_iterations, exclude=exclude), logs)
     return drop_boring_columns(
         pd.concat(list(tidy), ignore_index=True, sort=True))
