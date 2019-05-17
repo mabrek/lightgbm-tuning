@@ -381,9 +381,11 @@ def summarize_logs(df, exclude=None):
         iterations.iteration += 1
 
         rows.append(iterations)
-
+    del df
+    
     all_seeds = pd.concat(rows, ignore_index=True)
     all_seeds['cnt'] = 1
+    del rows
 
     aggregations = {}
     for c in all_seeds.columns:
@@ -398,10 +400,13 @@ def summarize_logs(df, exclude=None):
         else:
             aggregations[c] = np.min  # min is faster than lambda with .iloc[0]
 
-    return all_seeds\
+    res = all_seeds\
         .groupby(['experiment_id', 'iteration'])\
         .agg(aggregations)\
         .reset_index(drop=True)
+    del all_seeds
+
+    return res
 
 
 def unfold_iterations(df, exclude=None):
