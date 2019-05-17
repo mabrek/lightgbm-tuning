@@ -3,7 +3,6 @@ __all__ = [
     'read_json_log',
     'log_json',
     'summarize_logs',
-    'read_summarized_logs',
     'check_omitted_parameters',
     'N_FOLDS',
     'N_SEEDS',
@@ -33,7 +32,9 @@ __all__ = [
     'read_telecom_churn',
     'run_pool',
     'exclude_columns',
-    'read_files'
+    'read_files',
+    'summarize_to_chunks',
+    'aggregate_chunks'
 ]
 
 import warnings
@@ -46,6 +47,8 @@ from multiprocessing import Pool
 import logging
 import argparse
 from functools import partial
+import gc
+from glob import glob
 
 import numpy as np
 import pandas as pd
@@ -448,14 +451,21 @@ def drop_boring_columns(df):
         .pipe(lambda x: x.loc[:, (x.nunique() != 1) | (x.columns == 'cnt')])
 
 
-def read_summarized_logs(f, chunksize=1000, exclude=None):
+def summarize_to_chunks(f, chunk_prefix, chunksize=1000, exclude=None, verbose=False):
     logs = read_json_log(f, chunksize)
+    summarized = map(partial(summarize_logs, exclude=exclude), logs)
+    for n, chunk in enumerate(summarized):
+        chunk_name = f'{chunk_prefix}{n:03d}.pkl'
+        chunk.to_pickle(chunk_name)
+        if verbose:
+            print(chunk_name, 'written')
+        del chunk
+        gc.collect()
+
+
+def aggregate_chunks(chunks_glob):
     summarized = pd.concat(
-        list(
-            map(
-                partial(summarize_logs, exclude=exclude),
-                logs)
-        ),
+        [pd.read_pickle(f) for f in glob(chunks_glob)],
         ignore_index=True, sort=True)
 
     aggregations = {}
