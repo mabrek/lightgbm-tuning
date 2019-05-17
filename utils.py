@@ -381,7 +381,6 @@ def summarize_logs(df, exclude=None):
         iterations.iteration += 1
 
         rows.append(iterations)
-    del df
     
     all_seeds = pd.concat(rows, ignore_index=True)
     all_seeds['cnt'] = 1
