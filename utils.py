@@ -456,15 +456,16 @@ def drop_boring_columns(df):
 
 
 def summarize_to_chunks(f, chunk_prefix, chunksize=1000, exclude=None, verbose=False):
-    logs = read_json_log(f, chunksize)
-    summarized = map(partial(summarize_logs, exclude=exclude), logs)
-    for n, chunk in enumerate(summarized):
+    n = 0
+    for l in read_json_log(f, chunksize):
+        chunk  = summarize_logs(l, exclude=exclude)
         chunk_name = f'{chunk_prefix}{n:03d}.pkl'
         chunk.to_pickle(chunk_name)
         if verbose:
             print(chunk_name, 'written')
-        del chunk
+        del chunk, l
         gc.collect()
+        n += 1
 
 
 def aggregate_chunks(chunks_glob):
