@@ -450,9 +450,14 @@ def unfold_iterations(df, exclude=None):
 
 
 def drop_boring_columns(df):
-    return df.dropna(how='all', axis='columns')\
-        .drop(columns=['param_eval_at', 'param_metric'], errors='ignore')\
-        .pipe(lambda x: x.loc[:, (x.ne(x.iloc[0]).any()) | (x.columns == 'cnt')])
+    df.dropna(how='all', axis='columns', inplace=True)
+    df.drop(columns=['param_eval_at', 'param_metric'], errors='ignore', inplace=True)
+    for c in df.columns:
+        if c == 'cnt':
+            continue
+        elif df[c].eq(df[c].iloc[0]).all():
+            df.drop(columns=[c], inplace=True)
+    return df
 
 
 def summarize_to_chunks(f, chunk_prefix, chunksize=1000, exclude=None, verbose=False):
