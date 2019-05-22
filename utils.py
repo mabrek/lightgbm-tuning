@@ -469,14 +469,15 @@ def summarize_to_chunks(f, chunk_prefix, chunksize=1000, exclude=None, verbose=F
 
 
 def aggregate_chunks(chunks_glob):
-    summarized = pd.concat(
+    df = pd.concat(
         [pd.read_pickle(f) for f in glob(chunks_glob)],
         ignore_index=True, sort=True)
+    gc.collect()
 
     aggregations = {}
-    for c in summarized.columns:
+    for c in df.columns:
         if c.startswith('mean_'):
-            summarized[c] = summarized[c] * summarized.cnt
+            df[c] = df[c] * df .cnt
             aggregations[c] = np.sum
         elif c.startswith('min_'):
             aggregations[c] = np.min
@@ -486,16 +487,17 @@ def aggregate_chunks(chunks_glob):
             aggregations[c] = np.sum
         else:
             aggregations[c] = np.min  # min is faster than lambda with .iloc[0]
-
-    regrouped = summarized\
+    df = df\
         .groupby(['experiment_id', 'iteration'])\
         .aggregate(aggregations)
+    gc.collect()
 
-    for c in regrouped.columns:
+    for c in df.columns:
         if c.startswith('mean_'):
-            regrouped[c] = regrouped[c] / regrouped.cnt
+            df[c] = df[c] / df.cnt
+    gc.collect()
 
-    return drop_boring_columns(regrouped.reset_index(drop=True))
+    return drop_boring_columns(df.reset_index(drop=True))
 
 
 def read_full_logs(f, chunksize=1000, n_chunks=None, exclude=None):
