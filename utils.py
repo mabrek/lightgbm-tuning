@@ -294,37 +294,10 @@ def evaluate_experiment(experiment, folds, validation, whole_train,
     root_seed = parameters['seed']
     for sub_seed in range(N_SEEDS):
         parameters['seed'] = root_seed + sub_seed
-        log_data.update({'param_' + k: v for k, v in parameters.items()})
-
         try:
-            metrics = {}
-            for fold in range(len(folds)):
-                train, dev = folds[fold]
-
-                split_result = {}
-                lgb.train(parameters,
-                          train,
-                          valid_sets=[train, dev, validation],
-                          valid_names=['train', 'dev', 'validation'],
-                          evals_result=split_result,
-                          num_boost_round=num_boost_round,
-                          verbose_eval=False)
-                for data_name, scores in split_result.items():
-                    for score_name, score_values in scores.items():
-                        metrics[f'split{fold}_{data_name}_{score_name}'] = score_values
-
-            whole_result = {}
-            lgb.train(parameters,
-                      whole_train,
-                      valid_sets=[whole_train, validation],
-                      valid_names=['train', 'validation'],
-                      evals_result=whole_result,
-                      num_boost_round=num_boost_round,
-                      verbose_eval=False)
-            for data_name, scores in whole_result.items():
-                for score_name, score_values in scores.items():
-                    metrics[f'whole_{data_name}_{score_name}'] = score_values
-
+            log_data.update({'param_' + k: v for k, v in parameters.items()})
+            metrics = evaluate_parameters(parameters, folds, validation,
+                                          whole_train, num_boost_round)
             metrics['success'] = True
             log_data.update(metrics)
 
@@ -334,6 +307,39 @@ def evaluate_experiment(experiment, folds, validation, whole_train,
         finally:
             with log_lock:
                 log_json(log_file, log_data)
+
+
+def evaluate_parameters(parameters, folds, validation, whole_train,
+                        num_boost_round):
+    metrics = {}
+    for fold in range(len(folds)):
+        train, dev = folds[fold]
+
+        split_result = {}
+        lgb.train(parameters,
+                  train,
+                  valid_sets=[train, dev, validation],
+                  valid_names=['train', 'dev', 'validation'],
+                  evals_result=split_result,
+                  num_boost_round=num_boost_round,
+                  verbose_eval=False)
+        for data_name, scores in split_result.items():
+            for score_name, score_values in scores.items():
+                metrics[f'split{fold}_{data_name}_{score_name}'] = score_values
+
+    whole_result = {}
+    lgb.train(parameters,
+              whole_train,
+              valid_sets=[whole_train, validation],
+              valid_names=['train', 'validation'],
+              evals_result=whole_result,
+              num_boost_round=num_boost_round,
+              verbose_eval=False)
+    for data_name, scores in whole_result.items():
+        for score_name, score_values in scores.items():
+            metrics[f'whole_{data_name}_{score_name}'] = score_values
+
+    return metrics
 
 
 def exclude_columns(df, pattern=None):
