@@ -201,11 +201,15 @@ def parse_args():
     return parser.parse_args()
 
 
-def run_pool(parameter_space, args, evaluator):
+def generate_random_experiments(parameter_space, iterations):
+    return enumerate(ParameterSampler(parameter_space, iterations))
+
+
+def run_pool(generator, args, evaluator):
     with Pool(processes=args.processes) as pool:
         results = pool.imap_unordered(
             evaluator,
-            enumerate(ParameterSampler(parameter_space, args.iterations)),
+            generator,
             chunksize=args.chunksize)
         for r in results:
             print('.', end='', flush=True)
