@@ -6,7 +6,7 @@ from scipy.stats import randint as randint
 from scipy.stats import uniform as uniform
 
 from utils import loguniform, EVAL_AT, parse_args, read_telecom_churn,\
-    evaluate_experiment, run_pool
+    evaluate_experiment, run_pool, generate_random_experiments
 
 if __name__ == "__main__":
     parameter_space = {
@@ -16,7 +16,7 @@ if __name__ == "__main__":
         'num_threads': [1],  # will spread different parameter sets across cores
         'device_type': ['cpu'],
         'seed': randint(1, 100000),
-        'metric': [['binary_logloss', 'auc']],
+        'metric': [['binary_logloss', 'auc', 'map', 'binary_error', 'kldiv']],
         'eval_at': [EVAL_AT],
         'verbosity': [-1],
 
@@ -49,19 +49,21 @@ if __name__ == "__main__":
 
     args = parse_args()
     log_lock = Lock()
-    folds, validation, whole_train = read_telecom_churn()
+    X_train, X_val, y_train, y_val, folds = read_telecom_churn()
 
     # captures data and lock to use in forked processes
     def evaluator(experiment):
         evaluate_experiment(
             experiment,
-            folds=folds,
-            validation=validation,
-            whole_train=whole_train,
             experiment_name=args.name,
             log_file=args.log,
             log_lock=log_lock,
-            num_boost_round=500
+            num_boost_round=500,
+            X_train=X_train, X_val=X_val, y_train=y_train, y_val=y_val,
+            folds=folds
         )
 
-    run_pool(parameter_space, args, evaluator)
+    run_pool(
+        generate_random_experiments(parameter_space, args.iterations),
+        args,
+        evaluator)

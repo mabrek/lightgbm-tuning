@@ -52,19 +52,18 @@ if __name__ == "__main__":
 
     args = parse_args()
     log_lock = Lock()
-    folds, validation, whole_train = read_telecom_churn()
+    X_train, X_val, y_train, y_val, folds = read_telecom_churn()
 
     # captures data and lock to use in forked processes
     def evaluator(experiment):
         evaluate_experiment(
             experiment,
-            folds=folds,
-            validation=validation,
-            whole_train=whole_train,
             experiment_name=args.name,
             log_file=args.log,
             log_lock=log_lock,
-            num_boost_round=500
+            num_boost_round=500,
+            X_train=X_train, X_val=X_val, y_train=y_train, y_val=y_val,
+            folds=folds
         )
 
     run_pool(
