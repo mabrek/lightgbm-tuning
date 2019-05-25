@@ -19,7 +19,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     log_lock = Lock()
-    folds, validation, whole_train = read_telecom_churn()
+    X_train, X_val, y_train, y_val, folds = read_telecom_churn()
 
     input_log = read_json_log(args.input_log)
 
@@ -40,8 +40,10 @@ if __name__ == "__main__":
         log_data['name'] = name
         log_data['experiment_id'] = experiment_id
         log_data.update({'param_' + k: v for k, v in parameters.items()})
-        metrics = evaluate_parameters(parameters, folds, validation,
-                                      whole_train, num_boost_round=500)
+        metrics = evaluate_parameters(
+            parameters, num_boost_round=500,
+            X_train=X_train, X_val=X_val, y_train=y_train, y_val=y_val,
+            folds=folds)
         metrics['success'] = True
         log_data.update(metrics)
         with log_lock:

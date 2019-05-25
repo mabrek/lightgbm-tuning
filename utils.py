@@ -162,32 +162,9 @@ def read_telecom_churn():
     X_train, X_val, y_train, y_val = train_test_split(
         X, y, test_size=0.2, stratify=y, random_state=834936)
 
-    whole_train = lgb.Dataset(
-        X_train,
-        label=y_train,
-        group=[X_train.shape[0]],
-        free_raw_data=False
-    )
-    validation = lgb.Dataset(
-        X_val,
-        label=y_val,
-        group=[X_val.shape[0]],
-        free_raw_data=False
-    )
-    folds = [
-        [lgb.Dataset(X_train.iloc[train_idx],
-                     label=y_train.iloc[train_idx],
-                     group=[len(train_idx)],
-                     free_raw_data=False),
-         lgb.Dataset(X_train.iloc[test_idx],
-                     label=y_train.iloc[test_idx],
-                     group=[len(test_idx)],
-                     free_raw_data=False)]
-        for train_idx, test_idx
-        in StratifiedKFold(n_splits=N_FOLDS,
-                           random_state=9342).split(X_train, y_train)
-    ]
-    return folds, validation, whole_train
+    return X_train, X_val, y_train, y_val,\
+        StratifiedKFold(n_splits=N_FOLDS, random_state=9342)\
+        .split(X_train, y_train)
 
 
 def parse_args():
@@ -278,8 +255,9 @@ def log_json(file, data):
         print(json.dumps(data), file=output, flush=True)
 
 
-def evaluate_experiment(experiment, folds, validation, whole_train,
-                        experiment_name, log_file, log_lock, num_boost_round):
+def evaluate_experiment(experiment, experiment_name,
+                        log_file, log_lock, num_boost_round,
+                        X_train, X_val, y_train, y_val, folds):
 
     experiment_id, parameters = experiment
 
@@ -300,8 +278,9 @@ def evaluate_experiment(experiment, folds, validation, whole_train,
         parameters['seed'] = root_seed + sub_seed
         try:
             log_data.update({'param_' + k: v for k, v in parameters.items()})
-            metrics = evaluate_parameters(parameters, folds, validation,
-                                          whole_train, num_boost_round)
+            metrics = evaluate_parameters(
+                parameters, num_boost_round,
+                X_train, X_val, y_train, y_val, folds)
             metrics['success'] = True
             log_data.update(metrics)
 
@@ -313,11 +292,36 @@ def evaluate_experiment(experiment, folds, validation, whole_train,
                 log_json(log_file, log_data)
 
 
-def evaluate_parameters(parameters, folds, validation, whole_train,
-                        num_boost_round):
+def evaluate_parameters(parameters, num_boost_round,
+                        X_train, X_val, y_train, y_val, folds):
+
+    whole_train = lgb.Dataset(
+        X_train,
+        label=y_train,
+        group=[X_train.shape[0]],
+        free_raw_data=False
+    )
+    validation = lgb.Dataset(
+        X_val,
+        label=y_val,
+        group=[X_val.shape[0]],
+        free_raw_data=False
+    )
+    splits = [
+        [lgb.Dataset(X_train.iloc[train_idx],
+                     label=y_train.iloc[train_idx],
+                     group=[len(train_idx)],
+                     free_raw_data=False),
+         lgb.Dataset(X_train.iloc[test_idx],
+                     label=y_train.iloc[test_idx],
+                     group=[len(test_idx)],
+                     free_raw_data=False)]
+        for train_idx, test_idx in folds
+    ]
+
     metrics = {}
-    for fold in range(len(folds)):
-        train, dev = folds[fold]
+    for fold in range(len(splits)):
+        train, dev = splits[fold]
 
         split_result = {}
         lgb.train(parameters,
