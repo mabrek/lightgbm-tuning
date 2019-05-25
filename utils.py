@@ -163,8 +163,8 @@ def read_telecom_churn():
         X, y, test_size=0.2, stratify=y, random_state=834936)
 
     return X_train, X_val, y_train, y_val,\
-        StratifiedKFold(n_splits=N_FOLDS, random_state=9342)\
-        .split(X_train, y_train)
+        list(StratifiedKFold(n_splits=N_FOLDS, random_state=9342)
+             .split(X_train, y_train))
 
 
 def parse_args():
@@ -307,22 +307,18 @@ def evaluate_parameters(parameters, num_boost_round,
         group=[X_val.shape[0]],
         free_raw_data=False
     )
-    splits = [
-        [lgb.Dataset(X_train.iloc[train_idx],
-                     label=y_train.iloc[train_idx],
-                     group=[len(train_idx)],
-                     free_raw_data=False),
-         lgb.Dataset(X_train.iloc[test_idx],
-                     label=y_train.iloc[test_idx],
-                     group=[len(test_idx)],
-                     free_raw_data=False)]
-        for train_idx, test_idx in folds
-    ]
 
     metrics = {}
-    for fold in range(len(splits)):
-        train, dev = splits[fold]
-
+    for f in range(len(folds)):
+        train_idx, dev_idx = folds[f]
+        train = lgb.Dataset(X_train.iloc[train_idx],
+                            label=y_train.iloc[train_idx],
+                            group=[len(train_idx)],
+                            free_raw_data=False)
+        dev = lgb.Dataset(X_train.iloc[dev_idx],
+                          label=y_train.iloc[dev_idx],
+                          group=[len(dev_idx)],
+                          free_raw_data=False)
         split_result = {}
         lgb.train(parameters,
                   train,
@@ -333,7 +329,7 @@ def evaluate_parameters(parameters, num_boost_round,
                   verbose_eval=False)
         for data_name, scores in split_result.items():
             for score_name, score_values in scores.items():
-                metrics[f'split{fold}_{data_name}_{score_name}'] = score_values
+                metrics[f'split{f}_{data_name}_{score_name}'] = score_values
 
     whole_result = {}
     lgb.train(parameters,
