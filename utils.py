@@ -20,14 +20,12 @@ __all__ = [
     'read_full_logs',
     'unfold_iterations',
     'shaderdots',
-    'read_narrow',
     'top_mean_dev_auc',
     'top_min_dev_auc',
     'top_mean_validation_auc',
     'top_min_validation_auc',
     'rolling_min_dev_auc',
     'top_min_whole_validation_auc',
-    'narrow_filter',
     'parse_args',
     'read_telecom_churn',
     'run_pool',
@@ -552,29 +550,6 @@ def shaderdots(df, x, y, plot_width, plot_height, x_axis_type='linear'):
     p.yaxis[0].axis_label = y
     
     return InteractiveImage(p, image_callback)
-
-
-def narrow_filter(df):
-    return df.query('''1e-4 <= param_learning_rate and param_learning_rate <= 1e-1 \
-                    and 600 <= param_min_data_in_leaf and param_min_data_in_leaf <= 1000 \
-                    and 1e-10 <= param_min_sum_hessian_in_leaf and param_min_sum_hessian_in_leaf <= 316 \
-                    and 0.4 <= param_bagging_fraction and param_bagging_fraction <= 0.8 \
-                    and 0.3 <= param_feature_fraction and param_feature_fraction <= 0.8 \
-                    and 1e-4 <= param_max_delta_step and  param_max_delta_step <= 1 \
-                    and 1 <= param_lambda_l1 and param_lambda_l1 <= 252 \
-                    and 1e4 <= param_lambda_l2 and param_lambda_l2 <= 1e6 \
-                    and 1e-1 <= param_min_gain_to_split and param_min_gain_to_split <= 1 \
-                    and 1 <= param_min_data_per_group and param_min_data_per_group <= 3000 \
-                    and ((1 <= param_scale_pos_weight and param_scale_pos_weight <= 8) \
-                         or (param_scale_pos_weight != param_scale_pos_weight)) \
-                    and 1 <= param_min_data_in_bin and param_min_data_in_bin <= 3000''')
-
-
-def read_narrow(files):
-    for f in files:
-        yield pd.read_pickle(f)\
-            .assign(file=f)\
-            .pipe(narrow_filter)
 
 
 def read_files(files):
