@@ -577,10 +577,14 @@ def read_narrow(files):
             .pipe(narrow_filter)
 
 
-def read_files(files):
+def read_files(files, query=None):
     for f in files:
-        yield pd.read_pickle(f)\
+        df = pd.read_pickle(f)\
             .assign(file=f)
+        if query is None:
+            yield df
+        else:
+            yield df.query(query)
 
 
 def top_mean_dev_auc(dfs, n):
