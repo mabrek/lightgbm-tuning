@@ -552,10 +552,14 @@ def shaderdots(df, x, y, plot_width, plot_height, x_axis_type='linear'):
     return InteractiveImage(p, image_callback)
 
 
-def read_files(files):
+def read_files(files, query=None):
     for f in files:
-        yield pd.read_pickle(f)\
+        df = pd.read_pickle(f)\
             .assign(file=f)
+        if query is None:
+            yield df
+        else:
+            yield df.query(query)
 
 
 def top_mean_dev_auc(dfs, n):
