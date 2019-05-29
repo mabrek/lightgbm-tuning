@@ -41,7 +41,7 @@ if __name__ == "__main__":
         'scale_pos_weight': loguniform(low=-1, high=2, base=10),
         'boost_from_average': [False, True],
 
-        'metric': [['binary_logloss', 'auc', 'map', 'binary_error', 'kldiv']],
+        'metric': [['binary_logloss', 'auc', 'map', 'binary_error']],
         'eval_at': [EVAL_AT],
 
         'verbosity': [-1],

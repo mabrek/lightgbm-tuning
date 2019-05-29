@@ -16,7 +16,7 @@ if __name__ == "__main__":
         'num_threads': [1],  # will spread different parameter sets across cores
         'device_type': ['cpu'],
         'seed': randint(1, 100000),
-        'metric': [['binary_logloss', 'auc', 'map', 'binary_error', 'kldiv']],
+        'metric': [['binary_logloss', 'auc', 'map', 'binary_error']],
         'eval_at': [EVAL_AT],
         'verbosity': [-1],
 
