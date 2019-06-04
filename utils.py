@@ -393,7 +393,8 @@ def evaluate_logreg_parameters(parameters, X_train, X_val, y_train, y_val, folds
             transformers=[
                 ('num', MaxAbsScaler(), continuous),
                 ('cat', OneHotEncoder(handle_unknown='ignore'), categorical)],
-            remainder='drop')),
+            remainder='drop',
+            n_jobs=1)),
         ('clf', LogisticRegression())
     ])
     parameters = parameters.copy()
