@@ -3,10 +3,8 @@
 from multiprocessing import Lock
 import argparse
 
-import numpy as np
-
 from utils import read_json_log, read_telecom_churn, run_pool,\
-    evaluate_lgb_parameters, log_json
+    evaluate_logreg_parameters, log_json
 
 if __name__ == "__main__":
 
@@ -28,8 +26,6 @@ if __name__ == "__main__":
             parameters = row.filter(regex='^param_')\
                             .rename(lambda x: x.replace('param_', ''))\
                             .to_dict()
-            if np.isnan(parameters['scale_pos_weight']):
-                parameters['scale_pos_weight'] = None
             yield (row['name'],
                    row['experiment_id'],
                    parameters)
@@ -40,8 +36,8 @@ if __name__ == "__main__":
         log_data['name'] = name
         log_data['experiment_id'] = experiment_id
         log_data.update({'param_' + k: v for k, v in parameters.items()})
-        metrics = evaluate_lgb_parameters(
-            parameters, num_boost_round=500,
+        metrics = evaluate_logreg_parameters(
+            parameters,
             X_train=X_train, X_val=X_val, y_train=y_train, y_val=y_val,
             folds=folds)
         metrics['success'] = True

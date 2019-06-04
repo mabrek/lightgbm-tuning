@@ -6,7 +6,7 @@ from scipy.stats import randint as randint
 from scipy.stats import uniform as uniform
 
 from utils import loguniform, EVAL_AT, parse_args, read_telecom_churn,\
-    evaluate_experiment, run_pool, generate_random_experiments
+    evaluate_lgb_experiment, run_pool, generate_random_experiments
 
 if __name__ == "__main__":
     parameter_space = {
@@ -56,7 +56,7 @@ if __name__ == "__main__":
 
     # captures data and lock to use in forked processes
     def evaluator(experiment):
-        evaluate_experiment(
+        evaluate_lgb_experiment(
             experiment,
             experiment_name=args.name,
             log_file=args.log,
