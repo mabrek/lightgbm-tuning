@@ -25,7 +25,6 @@ __all__ = [
     'top_min_whole_validation_auc',
     'parse_args',
     'read_telecom_churn',
-    'run_pool',
     'exclude_columns',
     'read_files',
     'summarize_to_chunks',
@@ -351,8 +350,38 @@ def evaluate_predictions(y_true, y_pred, prefix=''):
     metrics = {}
     metrics[prefix + 'binary_logloss'] = [log_loss(y_true, y_pred)]
     metrics[prefix + 'auc'] = [roc_auc_score(y_true, y_pred)]
-    metrics[prefix + 'binary_error'] = [accuracy_score(y_true, y_pred)]
+    metrics[prefix + 'binary_error'] = [
+        accuracy_score(y_true, (y_pred > 0.5).astype('int'))]
     return metrics
+
+
+# TODO too similar to evaluate_lgb_experiment, refactor
+def evaluate_logreg_experiment(experiment, experiment_name,
+                               log_file, log_lock,
+                               X_train, X_val, y_train, y_val, folds):
+    experiment_id, parameters = experiment
+
+    log_data = {}
+    log_data['name'] = experiment_name
+    log_data['experiment_id'] = experiment_id
+
+    root_seed = parameters['clf__random_state']
+    for sub_seed in range(N_SEEDS):
+        parameters['clf__random_state'] = root_seed + sub_seed
+        try:
+            log_data.update({'param_' + k: v for k, v in parameters.items()})
+            metrics = evaluate_logreg_parameters(
+                parameters,
+                X_train, X_val, y_train, y_val, folds)
+            metrics['success'] = True
+            log_data.update(metrics)
+
+        except Exception as e:
+            warnings.warn(f'got Exception "{e}" for parameters {parameters}')
+            traceback.print_exc(file=sys.stderr)  # TODO use logger instead
+        finally:
+            with log_lock:
+                log_json(log_file, log_data)
 
 
 def evaluate_logreg_parameters(parameters, X_train, X_val, y_train, y_val, folds):
@@ -367,6 +396,8 @@ def evaluate_logreg_parameters(parameters, X_train, X_val, y_train, y_val, folds
             remainder='drop')),
         ('clf', LogisticRegression())
     ])
+    parameters = parameters.copy()
+    parameters['clf__class_weight'] = {1: parameters['clf__class_weight']}
     pipe.set_params(**parameters)
     metrics = {}
     for f in range(len(folds)):
@@ -374,20 +405,20 @@ def evaluate_logreg_parameters(parameters, X_train, X_val, y_train, y_val, folds
         p = clone(pipe)
         p.fit(X_train.iloc[train_idx], y_train.iloc[train_idx])
         metrics.update(evaluate_predictions(y_train.iloc[train_idx],
-                                            p.predict(X_train.iloc[train_idx]),
+                                            p.predict_proba(X_train.iloc[train_idx])[:, 1],
                                             f'split{f}_train_'))
         metrics.update(evaluate_predictions(y_train.iloc[dev_idx],
-                                            p.predict(X_train.iloc[dev_idx]),
+                                            p.predict_proba(X_train.iloc[dev_idx])[:, 1],
                                             f'split{f}_dev_'))
         metrics.update(evaluate_predictions(y_val,
-                                            p.predict(X_val),
+                                            p.predict_proba(X_val)[:, 1],
                                             f'split{f}_validation_'))
     pipe.fit(X_train, y_train)
     metrics.update(evaluate_predictions(y_train,
-                                        p.predict(X_train),
+                                        p.predict_proba(X_train)[:, 1],
                                         f'whole_train_'))
     metrics.update(evaluate_predictions(y_val,
-                                        p.predict(X_val),
+                                        p.predict_proba(X_val)[:, 1],
                                         f'whole_validation_'))
     return metrics
 
