@@ -51,6 +51,12 @@ import pandas as pd
 from sklearn.utils import check_random_state
 from sklearn.model_selection import train_test_split, StratifiedKFold
 from sklearn.model_selection import ParameterSampler
+from sklearn.metrics import log_loss, roc_auc_score, accuracy_score
+from sklearn.pipeline import Pipeline
+from sklearn.compose import ColumnTransformer
+from sklearn.preprocessing import OneHotEncoder, MaxAbsScaler
+from sklearn.linear_model import LogisticRegression
+from sklearn.base import clone
 import lightgbm as lgb
 
 from bokeh.plotting import figure
@@ -338,6 +344,51 @@ def evaluate_lgb_parameters(parameters, num_boost_round,
         for score_name, score_values in scores.items():
             metrics[f'whole_{data_name}_{score_name}'] = score_values
 
+    return metrics
+
+
+def evaluate_predictions(y_true, y_pred, prefix=''):
+    metrics = {}
+    metrics[prefix + 'binary_logloss'] = [log_loss(y_true, y_pred)]
+    metrics[prefix + 'auc'] = [roc_auc_score(y_true, y_pred)]
+    metrics[prefix + 'binary_error'] = [accuracy_score(y_true, y_pred)]
+    return metrics
+
+
+def evaluate_logreg_parameters(parameters, X_train, X_val, y_train, y_val, folds):
+    categorical = X_train.select_dtypes(include=['object', 'category'])\
+                         .columns.values
+    continuous = X_train.select_dtypes(include=['number']).columns.values
+    pipe = Pipeline([
+        ('preprocess', ColumnTransformer(
+            transformers=[
+                ('num', MaxAbsScaler(), continuous),
+                ('cat', OneHotEncoder(handle_unknown='ignore'), categorical)],
+            remainder='drop')),
+        ('clf', LogisticRegression())
+    ])
+    pipe.set_params(**parameters)
+    metrics = {}
+    for f in range(len(folds)):
+        train_idx, dev_idx = folds[f]
+        p = clone(pipe)
+        p.fit(X_train.iloc[train_idx], y_train.iloc[train_idx])
+        metrics.update(evaluate_predictions(y_train.iloc[train_idx],
+                                            p.predict(X_train.iloc[train_idx]),
+                                            f'split{f}_train_'))
+        metrics.update(evaluate_predictions(y_train.iloc[dev_idx],
+                                            p.predict(X_train.iloc[dev_idx]),
+                                            f'split{f}_dev_'))
+        metrics.update(evaluate_predictions(y_val,
+                                            p.predict(X_val),
+                                            f'split{f}_validation_'))
+    pipe.fit(X_train, y_train)
+    metrics.update(evaluate_predictions(y_train,
+                                        p.predict(X_train),
+                                        f'whole_train_'))
+    metrics.update(evaluate_predictions(y_val,
+                                        p.predict(X_val),
+                                        f'whole_validation_'))
     return metrics
 
 
