@@ -6,7 +6,7 @@ import argparse
 import numpy as np
 
 from utils import read_json_log, read_telecom_churn, run_pool,\
-    evaluate_parameters, log_json
+    evaluate_lgb_parameters, log_json
 
 if __name__ == "__main__":
 
@@ -40,7 +40,7 @@ if __name__ == "__main__":
         log_data['name'] = name
         log_data['experiment_id'] = experiment_id
         log_data.update({'param_' + k: v for k, v in parameters.items()})
-        metrics = evaluate_parameters(
+        metrics = evaluate_lgb_parameters(
             parameters, num_boost_round=500,
             X_train=X_train, X_val=X_val, y_train=y_train, y_val=y_val,
             folds=folds)

@@ -253,9 +253,9 @@ def log_json(file, data):
         print(json.dumps(data), file=output, flush=True)
 
 
-def evaluate_experiment(experiment, experiment_name,
-                        log_file, log_lock, num_boost_round,
-                        X_train, X_val, y_train, y_val, folds):
+def evaluate_lgb_experiment(experiment, experiment_name,
+                            log_file, log_lock, num_boost_round,
+                            X_train, X_val, y_train, y_val, folds):
 
     experiment_id, parameters = experiment
 
@@ -276,7 +276,7 @@ def evaluate_experiment(experiment, experiment_name,
         parameters['seed'] = root_seed + sub_seed
         try:
             log_data.update({'param_' + k: v for k, v in parameters.items()})
-            metrics = evaluate_parameters(
+            metrics = evaluate_lgb_parameters(
                 parameters, num_boost_round,
                 X_train, X_val, y_train, y_val, folds)
             metrics['success'] = True
@@ -290,8 +290,8 @@ def evaluate_experiment(experiment, experiment_name,
                 log_json(log_file, log_data)
 
 
-def evaluate_parameters(parameters, num_boost_round,
-                        X_train, X_val, y_train, y_val, folds):
+def evaluate_lgb_parameters(parameters, num_boost_round,
+                            X_train, X_val, y_train, y_val, folds):
 
     whole_train = lgb.Dataset(
         X_train,
