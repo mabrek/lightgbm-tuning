@@ -270,6 +270,11 @@ def evaluate_lgb_experiment(experiment, experiment_name,
             parameters['bagging_freq'] = 0
         del parameters['bagging_enable']
 
+    if 'feature_fraction_enable' in parameters:
+        if not parameters['feature_fraction_enable']:
+            parameters['feature_fraction'] = 1
+        del parameters['feature_fraction_enable']
+
     log_data = {}
     log_data['name'] = experiment_name
     log_data['experiment_id'] = experiment_id
