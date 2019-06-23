@@ -264,10 +264,11 @@ def evaluate_lgb_experiment(experiment, experiment_name,
     if parameters['is_unbalance']:
         parameters['scale_pos_weight'] = None
 
-    if not parameters['bagging_enable']:
-        parameters['bagging_fraction'] = 1
-        parameters['bagging_freq'] = 0
-    del parameters['bagging_enable']
+    if 'bagging_enable' in parameters:
+        if not parameters['bagging_enable']:
+            parameters['bagging_fraction'] = 1
+            parameters['bagging_freq'] = 0
+        del parameters['bagging_enable']
 
     log_data = {}
     log_data['name'] = experiment_name
