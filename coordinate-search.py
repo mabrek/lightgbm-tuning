@@ -14,10 +14,10 @@ from utils import read_json_log, read_telecom_churn, run_pool,\
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(
-        description='Reproduce recorded parameters')
+        description='Explore all coordinates of parameter set')
     parser.add_argument('--input-log', required=True)
     parser.add_argument('--output-log', required=True)
-    parser.add_argument('--coordinate-iterations', required=True)
+    parser.add_argument('--coordinate-iterations', type=int, required=True)
     parser.add_argument('--processes', type=int, default=1)
     parser.add_argument('--chunksize', type=int, default=10)
     args = parser.parse_args()
@@ -87,4 +87,4 @@ if __name__ == "__main__":
         with log_lock:
             log_json(args.output_log, log_data)
 
-    run_pool(enumerate(generator()), args, evaluator)
+    run_pool(generator(), args, evaluator)
