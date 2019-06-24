@@ -69,7 +69,7 @@ if __name__ == "__main__":
                 subspace['seed'] = randint(1, 100000)
                 subspace[c] = c_range
                 if c == 'scale_pos_weight':
-                    subspace['is_unbalance'] = False
+                    subspace['is_unbalance'] = [False]
                 for parameters in ParameterSampler(subspace, args.coordinate_iterations):
                     experiment_id += 1
                     yield (row['name'], experiment_id, parameters)
