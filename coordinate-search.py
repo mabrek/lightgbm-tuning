@@ -31,6 +31,7 @@ if __name__ == "__main__":
         parser.error('input-log should contain only one line')
 
     coordinates = {
+        'scale_pos_weight': loguniform(low=-1, high=1, base=10),
         'learning_rate': loguniform(low=-8, high=0, base=10),
         'num_leaves': randint(2, 4000),
         'max_depth': randint(1, 400),
@@ -48,7 +49,6 @@ if __name__ == "__main__":
         'cat_l2': loguniform(low=-10, high=10, base=10),
         'cat_smooth': loguniform(low=-10, high=10, base=10),
         'max_cat_to_onehot': randint(1, 100),
-        'scale_pos_weight': loguniform(low=-1, high=1, base=10),
         'max_bin': randint(4, 2048),
         'min_data_in_bin': randint(1, 1000),
         'bin_construct_sample_cnt': randint(5, 10000),
@@ -68,6 +68,8 @@ if __name__ == "__main__":
                 subspace = base.copy()
                 subspace['seed'] = randint(1, 100000)
                 subspace[c] = c_range
+                if c == 'scale_pos_weight':
+                    subspace['is_unbalance'] = False
                 for parameters in ParameterSampler(subspace, args.coordinate_iterations):
                     experiment_id += 1
                     yield (row['name'], experiment_id, parameters)
