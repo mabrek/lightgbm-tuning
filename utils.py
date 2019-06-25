@@ -4,13 +4,10 @@ __all__ = [
     'log_json',
     'summarize_logs',
     'check_omitted_parameters',
-    'N_FOLDS',
     'N_SEEDS',
     'EVAL_AT',
     'METRICS',
     'SUBSET_METRICS',
-    'SPLITS',
-    'SPLIT_METRICS',
     'WHOLE_METRICS',
     'CONT_PARAMETERS',
     'LOG_PARAMETERS',
@@ -48,7 +45,7 @@ import numpy as np
 import pandas as pd
 
 from sklearn.utils import check_random_state
-from sklearn.model_selection import train_test_split, StratifiedKFold
+from sklearn.model_selection import train_test_split, StratifiedShuffleSplit
 from sklearn.model_selection import ParameterSampler
 from sklearn.metrics import log_loss, roc_auc_score, accuracy_score
 from sklearn.pipeline import Pipeline
@@ -74,7 +71,6 @@ warnings.filterwarnings("ignore",
                         category=UserWarning,
                         module='lightgbm.basic')
 
-N_FOLDS = 5
 N_SEEDS = 3
 
 EVAL_AT = [10, 100, 1000]
@@ -83,12 +79,8 @@ METRICS = ['binary_logloss', 'auc', 'binary_error', 'kldiv']\
     + [f'map_{i}' for i in EVAL_AT]
 
 SUBSET_METRICS = ['_'.join([d, m])
-                for d, m
-                in product(['train', 'dev', 'validation'], METRICS)]
-
-SPLITS = ['split' + str(i) for i in range(N_FOLDS)]
-
-SPLIT_METRICS = ['_'.join([s, m]) for s, m in product(SPLITS, SUBSET_METRICS)]
+                  for d, m
+                  in product(['train', 'dev', 'validation'], METRICS)]
 
 WHOLE_METRICS = ['_'.join([d, m])
                  for d, m
@@ -131,7 +123,7 @@ INT_PARAMETERS = [
 ]
 
 
-def read_telecom_churn():
+def read_telecom_churn(n_folds):
     df = pd.read_csv(
         './data/WA_Fn-UseC_-Telco-Customer-Churn.csv',
         index_col='customerID',
@@ -163,7 +155,7 @@ def read_telecom_churn():
         X, y, test_size=0.2, stratify=y, random_state=834936)
 
     return X_train, X_val, y_train, y_val,\
-        list(StratifiedKFold(n_splits=N_FOLDS, random_state=9342)
+        list(StratifiedShuffleSplit(n_splits=n_folds, random_state=25346)
              .split(X_train, y_train))
 
 
@@ -175,6 +167,7 @@ def parse_args():
     parser.add_argument('--processes', type=int, default=1)
     parser.add_argument('--iterations', type=int, default=1)
     parser.add_argument('--chunksize', type=int, default=10)
+    parser.add_argument('--n-folds', type=int, default=10)
     return parser.parse_args()
 
 
@@ -437,7 +430,7 @@ def exclude_columns(df, pattern=None):
         return df
 
 
-def summarize_logs(df, exclude=None):
+def summarize_logs(df, n_folds, exclude=None):
     df = df[df.success.fillna(False)]\
         .pipe(exclude_columns, pattern=exclude)\
         .rename(columns=lambda x: x.replace('@', '_'))
@@ -450,7 +443,7 @@ def summarize_logs(df, exclude=None):
              if k not in ['Index', 'param_eval_at', 'param_metric']})
 
         for m in SUBSET_METRICS:
-            c = ['_'.join([s, m]) for s in SPLITS]
+            c = ['_'.join(['split' + str(i), m]) for i in range(n_folds)]
             if c[0] not in df.columns:
                 continue
             iterations['mean_' + m] = iterations[c].mean(axis=1)
@@ -502,15 +495,15 @@ def summarize_logs(df, exclude=None):
     return res
 
 
-def unfold_iterations(df, exclude=None):
+def unfold_iterations(df, n_folds, exclude=None):
     df = df[df.success.fillna(False)]\
         .pipe(exclude_columns, pattern=exclude)\
         .rename(columns=lambda x: x.replace('@', '_'))
 
     if set(WHOLE_METRICS).issubset(set(df.columns)):
-        splits = list(chain([-1], range(N_FOLDS)))
+        splits = list(chain([-1], range(n_folds)))
     else:
-        splits = list(range(N_FOLDS))
+        splits = list(range(n_folds))
     rows = []
     for row in df.itertuples():
         for s in splits:

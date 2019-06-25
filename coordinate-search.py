@@ -23,7 +23,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     log_lock = Lock()
-    X_train, X_val, y_train, y_val, folds = read_telecom_churn()
+    X_train, X_val, y_train, y_val, folds = read_telecom_churn(args.n_folds)
 
     input_log = read_json_log(args.input_log)
     if input_log.shape[0] != 1:
