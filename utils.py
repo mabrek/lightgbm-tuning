@@ -4,7 +4,6 @@ __all__ = [
     'log_json',
     'summarize_logs',
     'check_omitted_parameters',
-    'N_SEEDS',
     'EVAL_AT',
     'METRICS',
     'SUBSET_METRICS',
@@ -70,8 +69,6 @@ logging.basicConfig(level=logging.INFO)
 warnings.filterwarnings("ignore",
                         category=UserWarning,
                         module='lightgbm.basic')
-
-N_SEEDS = 3
 
 EVAL_AT = [10, 100, 1000]
 
@@ -168,6 +165,7 @@ def parse_args():
     parser.add_argument('--iterations', type=int, default=1)
     parser.add_argument('--chunksize', type=int, default=10)
     parser.add_argument('--n-folds', type=int, default=10)
+    parser.add_argument('--n-seeds', type=int, default=3)
     return parser.parse_args()
 
 
@@ -249,7 +247,7 @@ def log_json(file, data):
 
 
 def evaluate_lgb_experiment(experiment, experiment_name,
-                            log_file, log_lock, num_boost_round,
+                            log_file, log_lock, num_boost_round, n_seeds,
                             X_train, X_val, y_train, y_val, folds):
 
     experiment_id, parameters = experiment
@@ -273,7 +271,7 @@ def evaluate_lgb_experiment(experiment, experiment_name,
     log_data['experiment_id'] = experiment_id
 
     root_seed = parameters['seed']
-    for sub_seed in range(N_SEEDS):
+    for sub_seed in range(n_seeds):
         parameters['seed'] = root_seed + sub_seed
         try:
             log_data.update({'param_' + k: v for k, v in parameters.items()})
@@ -355,7 +353,7 @@ def evaluate_predictions(y_true, y_pred, prefix=''):
 
 
 # TODO too similar to evaluate_lgb_experiment, refactor
-def evaluate_logreg_experiment(experiment, experiment_name,
+def evaluate_logreg_experiment(experiment, experiment_name, n_seeds,
                                log_file, log_lock,
                                X_train, X_val, y_train, y_val, folds):
     experiment_id, parameters = experiment
@@ -365,7 +363,7 @@ def evaluate_logreg_experiment(experiment, experiment_name,
     log_data['experiment_id'] = experiment_id
 
     root_seed = parameters['clf__random_state']
-    for sub_seed in range(N_SEEDS):
+    for sub_seed in range(n_seeds):
         parameters['clf__random_state'] = root_seed + sub_seed
         try:
             log_data.update({'param_' + k: v for k, v in parameters.items()})
