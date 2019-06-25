@@ -152,7 +152,7 @@ def read_telecom_churn(n_folds):
         X, y, test_size=0.2, stratify=y, random_state=834936)
 
     return X_train, X_val, y_train, y_val,\
-        list(StratifiedShuffleSplit(n_splits=n_folds, random_state=25346)
+        list(StratifiedShuffleSplit(n_splits=n_folds, test_size=0.2, random_state=25346)
              .split(X_train, y_train))
 
 
