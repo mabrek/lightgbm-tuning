@@ -13,6 +13,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description='Reproduce recorded parameters')
     parser.add_argument('--input-log', required=True)
+    parser.add_argument('--input-chunksize', type=int, default=100)
     parser.add_argument('--output-log', required=True)
     parser.add_argument('--processes', type=int, default=1)
     parser.add_argument('--chunksize', type=int, default=10)
@@ -22,18 +23,19 @@ if __name__ == "__main__":
     log_lock = Lock()
     X_train, X_val, y_train, y_val, folds = read_telecom_churn(args.n_folds)
 
-    input_log = read_json_log(args.input_log)
+    input_logs = read_json_log(args.input_log, args.input_chunksize)
 
     def generator():
-        for _, row in input_log.iterrows():
-            parameters = row.filter(regex='^param_')\
-                            .rename(lambda x: x.replace('param_', ''))\
-                            .to_dict()
-            if np.isnan(parameters['scale_pos_weight']):
-                parameters['scale_pos_weight'] = None
-            yield (row['name'],
-                   row['experiment_id'],
-                   parameters)
+        for input_log in input_logs:
+            for _, row in input_log.iterrows():
+                parameters = row.filter(regex='^param_')\
+                                .rename(lambda x: x.replace('param_', ''))\
+                                .to_dict()
+                if np.isnan(parameters['scale_pos_weight']):
+                    parameters['scale_pos_weight'] = None
+                yield (row['name'],
+                       row['experiment_id'],
+                       parameters)
 
     def evaluator(experiment):
         name, experiment_id, parameters = experiment
