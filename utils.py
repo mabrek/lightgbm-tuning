@@ -443,14 +443,14 @@ def summarize_logs(df, n_folds, exclude=None):
         for i, m in product(range(n_folds), METRICS):
             dev = f'split{i}_dev_{m}'
             train = f'split{i}_train_{m}'
-            if dev not in df.columns or train not in df.columns:
+            if dev not in iterations.columns or train not in iterations.columns:
                 continue
             overfit = f'split{i}_overfit_{m}'
             iterations[overfit] = iterations[dev] - iterations[train]
 
         for m in SUBSET_METRICS + ['overfit_' + m for m in METRICS]:
             c = [f'split{i}_{m}' for i in range(n_folds)]
-            if c[0] not in df.columns:
+            if c[0] not in iterations.columns:
                 continue
             iterations['mean_' + m] = iterations[c].mean(axis=1)
             if m.startswith('validation_') or m.startswith('dev_'):
@@ -462,7 +462,7 @@ def summarize_logs(df, n_folds, exclude=None):
             axis='columns', inplace=True)
 
         for m in WHOLE_METRICS:
-            if m not in df.columns:
+            if m not in iterations.columns:
                 continue
             iterations['mean_' + m] = iterations[m]
             iterations['min_' + m] = iterations[m]
