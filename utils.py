@@ -446,7 +446,7 @@ def summarize_logs(df, n_folds, exclude=None):
             if dev not in iterations.columns or train not in iterations.columns:
                 continue
             overfit = f'split{i}_overfit_{m}'
-            iterations[overfit] = iterations[dev] - iterations[train]
+            iterations[overfit] = iterations[train] - iterations[dev]
 
         for m in SUBSET_METRICS + ['overfit_' + m for m in METRICS]:
             c = [f'split{i}_{m}' for i in range(n_folds)]
