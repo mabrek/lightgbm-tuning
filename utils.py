@@ -456,7 +456,10 @@ def summarize_logs(df, n_folds, exclude=None):
             if m.startswith('validation_') or m.startswith('dev_'):
                 iterations['min_' + m] = iterations[c].min(axis=1)
                 iterations['max_' + m] = iterations[c].max(axis=1)
-            iterations.drop(c, axis=1, inplace=True)
+
+        iterations.drop(
+            iterations.columns.to_series().filter(regex=r'^split\d+_'),
+            axis='columns', inplace=True)
 
         for m in WHOLE_METRICS:
             if m not in df.columns:
