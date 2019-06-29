@@ -453,7 +453,8 @@ def summarize_logs(df, n_folds, exclude=None):
             if c[0] not in iterations.columns:
                 continue
             iterations['mean_' + m] = iterations[c].mean(axis=1)
-            if m.startswith('validation_') or m.startswith('dev_'):
+            if m.startswith('validation_') or m.startswith('dev_')\
+               or m.startswith('overfit_'):
                 iterations['min_' + m] = iterations[c].min(axis=1)
                 iterations['max_' + m] = iterations[c].max(axis=1)
 
