@@ -440,17 +440,15 @@ def summarize_logs(df, n_folds, exclude=None):
              for k in row._fields
              if k not in ['Index', 'param_eval_at', 'param_metric']})
 
-        overfit_metrics = []
         for i, m in product(range(n_folds), METRICS):
             dev = f'split{i}_dev_{m}'
             train = f'split{i}_train_{m}'
             if dev not in df.columns or train not in df.columns:
                 continue
             overfit = f'split{i}_overfit_{m}'
-            overfit_metrics.append(overfit)
-            df[overfit] = df[dev] - df[train]
+            iterations[overfit] = iterations[dev] - iterations[train]
 
-        for m in SUBSET_METRICS + overfit_metrics:
+        for m in SUBSET_METRICS + ['overfit_' + m for m in METRICS]:
             c = [f'split{i}_{m}' for i in range(n_folds)]
             if c[0] not in df.columns:
                 continue
