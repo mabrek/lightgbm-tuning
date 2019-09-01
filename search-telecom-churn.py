@@ -38,7 +38,7 @@ if __name__ == "__main__":
         'max_cat_to_onehot': randint(1, 100),
 
         'is_unbalance': [False, True],
-        'scale_pos_weight': loguniform(low=-1, high=2, base=10),
+        'scale_pos_weight': uniform(loc=0.1, scale=99.9),
         'boost_from_average': [False, True],
 
         'metric': [['binary_logloss', 'auc', 'map', 'binary_error']],

@@ -32,7 +32,7 @@ if __name__ == "__main__":
         parser.error('input-log should contain only one line')
 
     coordinates = {
-        'scale_pos_weight': loguniform(low=-1, high=1, base=10),
+        'scale_pos_weight': uniform(loc=0.1, scale=9.9),
         'learning_rate': loguniform(low=-8, high=0, base=10),
         'num_leaves': randint(2, 4000),
         'max_depth': randint(1, 400),
