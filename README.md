@@ -14,11 +14,11 @@ The same dataset is available at https://www.kaggle.com/blastchar/telco-customer
 
 Docker, very large image from https://kaggle.com, but it has everything:
 
-    docker pull gcr.io/kaggle-images/python@sha256:26b111929a0df780f246fbf3db9f57f8f69c944e898735c59fd8581c42f92f1d
+    docker pull gcr.io/kaggle-images/python@sha256:a186e97ff14f3729aa3c023f9e7a538d762080038a6f09ed4f2256baf107daa2
 
 Start container (change path to cloned repo):
 
-    docker run -it --rm -v /data/work/sources/lightgbm-tuning:/lightgbm-tuning --net=host --name lightgbm-tuning gcr.io/kaggle-images/python@sha256:26b111929a0df780f246fbf3db9f57f8f69c944e898735c59fd8581c42f92f1d bash
+    docker run -it --rm -v /data/work/sources/lightgbm-tuning:/lightgbm-tuning --net=host --name lightgbm-tuning gcr.io/kaggle-images/python@sha256:a186e97ff14f3729aa3c023f9e7a538d762080038a6f09ed4f2256baf107daa2
 
 Run experiments (in docker container):
 
