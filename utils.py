@@ -44,7 +44,7 @@ import numpy as np
 import pandas as pd
 
 from sklearn.utils import check_random_state
-from sklearn.model_selection import train_test_split, StratifiedShuffleSplit
+from sklearn.model_selection import train_test_split, StratifiedKFold, StratifiedShuffleSplit
 from sklearn.model_selection import ParameterSampler
 from sklearn.metrics import log_loss, roc_auc_score, accuracy_score
 from sklearn.pipeline import Pipeline
@@ -120,7 +120,7 @@ INT_PARAMETERS = [
 ]
 
 
-def read_telecom_churn(n_folds):
+def read_telecom_churn(n_folds, split_kind, random_state=67345):
     df = pd.read_csv(
         './data/WA_Fn-UseC_-Telco-Customer-Churn.csv',
         index_col='customerID',
@@ -151,9 +151,17 @@ def read_telecom_churn(n_folds):
     X_train, X_val, y_train, y_val = train_test_split(
         X, y, test_size=0.2, stratify=y, random_state=834936)
 
-    return X_train, X_val, y_train, y_val,\
-        list(StratifiedShuffleSplit(n_splits=n_folds, test_size=0.2, random_state=25346)
-             .split(X_train, y_train))
+    if split_kind == 'k-folds':
+        folds = list(StratifiedKFold(n_splits=n_folds,
+                                     random_state=random_state)
+                     .split(X_train, y_train))
+    elif split_kind == 'shuffle-split':
+        folds = list(StratifiedShuffleSplit(n_splits=n_folds,
+                                            test_size=0.2,
+                                            random_state=random_state)
+                     .split(X_train, y_train))
+
+    return X_train, X_val, y_train, y_val, folds
 
 
 def parse_args():
@@ -166,6 +174,9 @@ def parse_args():
     parser.add_argument('--chunksize', type=int, default=10)
     parser.add_argument('--n-folds', type=int, default=10)
     parser.add_argument('--n-seeds', type=int, default=3)
+    parser.add_argument('--split-kind',
+                        type=str,
+                        choices=['k-folds', 'shuffle-split'])
     return parser.parse_args()
 
 

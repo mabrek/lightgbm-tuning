@@ -27,7 +27,8 @@ if __name__ == "__main__":
 
     args = parse_args()
     log_lock = Lock()
-    X_train, X_val, y_train, y_val, folds = read_telecom_churn(args.n_folds)
+    X_train, X_val, y_train, y_val, folds = \
+        read_telecom_churn(args.n_folds, args.split_kind)
 
     # captures data and lock to use in forked processes
     def evaluator(experiment):
