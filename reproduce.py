@@ -17,7 +17,11 @@ if __name__ == "__main__":
     parser.add_argument('--output-log', required=True)
     parser.add_argument('--processes', type=int, default=1)
     parser.add_argument('--chunksize', type=int, default=10)
-    parser.add_argument('--n-folds', type=int, default=10)
+    parser.add_argument('--n-folds', type=int, default=5)
+    parser.add_argument('--split-kind',
+                        type=str,
+                        default='k-folds',
+                        choices=['k-folds', 'shuffle-split'])
     args = parser.parse_args()
 
     log_lock = Lock()

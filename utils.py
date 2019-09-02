@@ -175,10 +175,11 @@ def parse_args():
     parser.add_argument('--processes', type=int, default=1)
     parser.add_argument('--iterations', type=int, default=1)
     parser.add_argument('--chunksize', type=int, default=10)
-    parser.add_argument('--n-folds', type=int, default=10)
+    parser.add_argument('--n-folds', type=int, default=5)
     parser.add_argument('--n-seeds', type=int, default=3)
     parser.add_argument('--split-kind',
                         type=str,
+                        default='k-folds',
                         choices=['k-folds', 'shuffle-split'])
     return parser.parse_args()
 
