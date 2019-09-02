@@ -54,7 +54,10 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.base import clone
 import lightgbm as lgb
 
-from bokeh.plotting import figure
+try:
+    from bokeh.plotting import figure
+except ImportError as e:
+    warnings.warn(f'exception "{e}" while importing bokeh, plotting will be unavailable')
 
 try:
     import datashader as ds
