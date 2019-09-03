@@ -12,13 +12,13 @@ Get data from https://www.ibm.com/communities/analytics/watson-analytics-blog/pr
 
 The same dataset is available at https://www.kaggle.com/blastchar/telco-customer-churn
 
-Docker, very large image from https://kaggle.com, but it has everything:
+Build Docker image:
 
-    docker pull gcr.io/kaggle-images/python@sha256:a186e97ff14f3729aa3c023f9e7a538d762080038a6f09ed4f2256baf107daa2
+    docker build -t lightgbm-tuning .
 
 Start container (change path to cloned repo):
 
-    docker run -it --rm -v /data/work/sources/lightgbm-tuning:/lightgbm-tuning --net=host --name lightgbm-tuning gcr.io/kaggle-images/python@sha256:a186e97ff14f3729aa3c023f9e7a538d762080038a6f09ed4f2256baf107daa2
+    docker run -it --rm -v /data/work/sources/lightgbm-tuning:/lightgbm-tuning --net=host --name lightgbm-tuning lightgbm-tuning bash
 
 Run experiments (in docker container):
 
