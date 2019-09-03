@@ -1,0 +1,5 @@
+data
+experiments
+.git
+.ipynb_checkpoints
+__pycache__

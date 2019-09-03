@@ -1,3 +1,5 @@
-FROM gcr.io/kaggle-images/python@sha256:a186e97ff14f3729aa3c023f9e7a538d762080038a6f09ed4f2256baf107daa2
+FROM python:3.7.4-buster
 
-# todo install jupyter plugin to auto-export to .py
+COPY requirements.txt /tmp
+
+RUN pip install -r /tmp/requirements.txt
