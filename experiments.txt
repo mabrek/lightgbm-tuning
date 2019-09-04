@@ -3,3 +3,5 @@
 ./search-telecom-churn.py --name wide-20shuffle-3seeds --log experiments/wide-20shuffle-3seed.log --n-folds 20 --split-kind shuffle-split --iterations 5000 --processes 6 --n-seeds 3
 
 ./search-telecom-churn-good.py --name good-5fold-3seeds --log experiments/good-5fold-3seeds --n-folds 5 --split-kind k-folds --iterations 5000 --processes 6 --n-seeds 3
+
+./search-telecom-churn-good.py --name good-20shuffle-3seeds --log experiments/good-20shuffle-3seed.log --n-folds 20 --split-kind shuffle-split --iterations 5000 --processes 6 --n-seeds 3
