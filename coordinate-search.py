@@ -52,7 +52,6 @@ if __name__ == "__main__":
         'cat_l2': loguniform(low=-10, high=10, base=10),
         'cat_smooth': loguniform(low=-10, high=10, base=10),
         'max_cat_to_onehot': randint(1, 100),
-        'is_unbalance': [False, True],
         'scale_pos_weight': uniform(loc=0.1, scale=99.9),
         'boost_from_average': [False, True],
         'max_bin': randint(4, 2048),
