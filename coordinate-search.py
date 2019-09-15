@@ -32,9 +32,6 @@ if __name__ == "__main__":
         read_telecom_churn(args.n_folds, args.split_kind)
 
     input_log = read_json_log(args.input_log)
-    if input_log.shape[0] != 1:
-        parser.print_usage()
-        parser.error('input-log should contain only one line')
 
     coordinates = {
         'learning_rate': loguniform(low=-8, high=6, base=10),
