@@ -17,7 +17,7 @@ if __name__ == "__main__":
         description='Explore all coordinates of parameter set')
     parser.add_argument('--input-log', required=True)
     parser.add_argument('--output-log', required=True)
-    parser.add_argument('--coordinate-iterations', type=int, required=True)
+    parser.add_argument('--coordinate-iterations', type=int, default=100)
     parser.add_argument('--processes', type=int, default=1)
     parser.add_argument('--chunksize', type=int, default=10)
     args = parser.parse_args()
