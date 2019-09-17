@@ -7,3 +7,6 @@
 ./search-telecom-churn-good.py --name good-20shuffle-3seeds --log experiments/good-20shuffle-3seed.log --n-folds 20 --split-kind shuffle-split --iterations 5000 --processes 6 --n-seeds 3
 
 ./coordinate-search.py --input-log experiments/good-best.log --output-log experiments/good-best-coordinates.log --coordinate-iterations 33 --processes 8 --n-folds 20 --split-kind shuffle-split
+
+./search-telecom-churn-logreg.py --name logreg --log experiments/logreg.log --processes 8 --iterations 10000 --n-folds 20 --n-seeds 1 --split-kind shuffle-split
+
