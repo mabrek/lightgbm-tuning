@@ -688,3 +688,16 @@ def top_min_whole_validation_auc(dfs, n):
     return pd.concat(list(map(lambda df: df.sort_values('min_whole_validation_auc', ascending=False).iloc[:n], dfs)),
                   ignore_index=True, sort=True)\
             .sort_values('min_whole_validation_auc', ascending=False).iloc[:n]
+
+
+def compare_logs(left_log, right_log, n_folds):
+    left_df = unfold_iterations(read_json_log(left_log), n_folds).drop(columns='timestamp')
+    right_df = unfold_iterations(read_json_log(right_log), n_folds).drop(columns='timestamp')
+    sort_columns = ['experiment_id', 'param_seed', 'iteration', 'split']
+    # todo show first unequal row and column
+    return left_df\
+        .sort_values(sort_columns)\
+        .sort_index(axis=1)\
+        .equals(right_df
+                .sort_values(sort_columns)
+                .sort_index(axis=1))
