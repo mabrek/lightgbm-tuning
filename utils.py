@@ -122,6 +122,12 @@ INT_PARAMETERS = [
     'param_bin_construct_sample_cnt',
 ]
 
+LOGREG_LOG_PARAMETERS = [
+    'param_clf__C',
+    'param_clf__class_weight',
+    'param_clf__tol'
+]
+
 
 def read_telecom_churn(n_folds, split_kind, random_state=67345):
     df = pd.read_csv(
