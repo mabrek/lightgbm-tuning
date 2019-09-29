@@ -690,14 +690,21 @@ def top_min_whole_validation_auc(dfs, n):
             .sort_values('min_whole_validation_auc', ascending=False).iloc[:n]
 
 
+def pre_compare_log(log, n_folds):
+    return unfold_iterations(read_json_log(log), n_folds)\
+        .drop(columns='timestamp')\
+        .sort_values(['experiment_id', 'param_seed', 'iteration', 'split'])\
+        .sort_index(axis=1)
+
+
 def compare_logs(left_log, right_log, n_folds):
-    left_df = unfold_iterations(read_json_log(left_log), n_folds).drop(columns='timestamp')
-    right_df = unfold_iterations(read_json_log(right_log), n_folds).drop(columns='timestamp')
-    sort_columns = ['experiment_id', 'param_seed', 'iteration', 'split']
-    # todo show first unequal row and column
-    return left_df\
-        .sort_values(sort_columns)\
-        .sort_index(axis=1)\
-        .equals(right_df
-                .sort_values(sort_columns)
-                .sort_index(axis=1))
+    left = pre_compare_log(left_log, n_folds)
+    right = pre_compare_log(right_log, n_folds)
+    res = left.equals(right)
+    if not res:
+        for c in left.columns:
+            if not left[c].equals(right[c]):
+                id = left[c].eq(right[c]).idxmin()
+                print(f'{id},\'{c}\': {left.loc[id, c]} <> {right.loc[id, c]}')
+                break
+    return res
