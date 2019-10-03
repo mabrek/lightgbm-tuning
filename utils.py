@@ -642,15 +642,19 @@ def check_omitted_parameters(df):
     return set(all_parameters) - (set(CONT_PARAMETERS) | set(LOG_PARAMETERS) | set(SET_PARAMETERS) | set(INT_PARAMETERS))
 
 
-def shaderdots(df, x, y, plot_width, plot_height, x_axis_type='linear'):
+def shaderdots(df, x, y, plot_width, plot_height, category_column=None, x_axis_type='linear'):
     def image_callback(x_range, y_range, w, h):
+        if category_column:
+            agg = ds.count_cat(category_column)
+        else:
+            agg = ds.count()
         return tf.dynspread(
             tf.shade(
                 ds.Canvas(
                     plot_width=w, plot_height=h, 
                     x_range=x_range, y_range=y_range,
-                    x_axis_type=x_axis_type)\
-                .points(df, x, y),
+                    x_axis_type=x_axis_type)
+                .points(df, x, y, agg),
             ),
             max_px=1,  threshold=0.5)
 
