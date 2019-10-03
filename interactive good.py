@@ -28,7 +28,7 @@ from IPython.display import display
 
 from bokeh.io import output_notebook
 
-from utils import METRICS, CONT_PARAMETERS, LOG_PARAMETERS, SET_PARAMETERS, INT_PARAMETERS, shaderdots
+from utils import METRICS, CONT_PARAMETERS, LOG_PARAMETERS, SET_PARAMETERS, INT_PARAMETERS, shaderdots, read_files
 
 output_notebook()
 # -
@@ -39,12 +39,17 @@ pd.set_option('display.max_columns', None)
 # %load_ext autoreload
 # %autoreload 2
 
-df = pd.concat([pd.read_pickle(f) 
-                  for f in ['./experiments/good-20shuffle-3seed.pkl'
-                           ]], 
+df = pd.concat(read_files(['./experiments/good-20shuffle-3seed.pkl'
+                           ]), 
                ignore_index=True, sort=True)
 
+df['iteration_type'] = 'regular'
+df['iteration_rank'] = df.groupby(['file', 'experiment_id', 'param_seed']).mean_dev_auc.transform('rank', ascending=False)
+df.loc[df.iteration_rank == 1, 'iteration_type'] = 'top'
+
 df.mean_dev_auc.describe()
+
+df.groupby('iteration_type').mean_dev_auc.describe()
 
 df.min_whole_validation_auc.describe()
 
