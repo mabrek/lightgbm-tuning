@@ -28,7 +28,7 @@ from IPython.display import display
 
 from bokeh.io import output_notebook
 
-from utils import METRICS, CONT_PARAMETERS, LOG_PARAMETERS, SET_PARAMETERS, INT_PARAMETERS, shaderdots
+from utils import METRICS, CONT_PARAMETERS, LOG_PARAMETERS, SET_PARAMETERS, INT_PARAMETERS, shaderdots, read_files
 
 output_notebook()
 # -
@@ -39,23 +39,27 @@ pd.set_option('display.max_columns', None)
 # %load_ext autoreload
 # %autoreload 2
 
-df = pd.concat([pd.read_pickle(f) 
-                  for f in ['./experiments/wide-20shuffle-3seed.pkl'
-                           ]], 
+df = pd.concat(read_files(['./experiments/wide-20shuffle-3seed.pkl'
+                           ]), 
                ignore_index=True, sort=True)
+
+df['iteration_rank'] = df.sort_values('mean_dev_auc', ascending=False)\
+    .groupby(['file', 'experiment_id', 'param_seed'])\
+    .cumcount()
+df['iteration_type'] = (df.iteration_rank > 50).astype('category')
 
 df.mean_dev_auc.describe()
 
 df.min_whole_validation_auc.describe()
 
-display(shaderdots(df, 'min_dev_auc', 'min_whole_validation_auc', 700, 700))
+display(shaderdots(df, 'min_dev_auc', 'min_whole_validation_auc', 700, 700, category_column='iteration_type'))
 
-display(shaderdots(df, 'mean_dev_auc', 'min_whole_validation_auc', 700, 700))
+display(shaderdots(df, 'mean_dev_auc', 'min_whole_validation_auc', 700, 700, category_column='iteration_type'))
 
-[display(shaderdots(df, p, 'mean_dev_auc', 500, 500, x_axis_type='log'))
+[display(shaderdots(df, p, 'mean_dev_auc', 500, 500, x_axis_type='log', category_column='iteration_type'))
  for p in sorted(set(LOG_PARAMETERS) & set(df.columns))];
 
-[display(shaderdots(df, p, 'mean_dev_auc', 500, 500))
+[display(shaderdots(df, p, 'mean_dev_auc', 500, 500, category_column='iteration_type'))
  for p in sorted((set(CONT_PARAMETERS) | set(INT_PARAMETERS)) & set(df.columns))];
 
 # ### overfit auc
@@ -64,31 +68,31 @@ df.max_overfit_auc.describe()
 
 df.mean_overfit_auc.describe()
 
-[display(shaderdots(df, p, 'max_overfit_auc', 500, 500, x_axis_type='log'))
+[display(shaderdots(df, p, 'max_overfit_auc', 500, 500, x_axis_type='log', category_column='iteration_type'))
  for p in sorted(set(LOG_PARAMETERS) & set(df.columns))];
 
-[display(shaderdots(df, p, 'max_overfit_auc', 500, 500))
+[display(shaderdots(df, p, 'max_overfit_auc', 500, 500, category_column='iteration_type'))
  for p in sorted((set(CONT_PARAMETERS) | set(INT_PARAMETERS)) & set(df.columns))];
 
-display(shaderdots(df, 'mean_dev_auc', 'max_overfit_auc', 500, 500))
+display(shaderdots(df, 'mean_dev_auc', 'max_overfit_auc', 500, 500, category_column='iteration_type'))
 
 # ### range auc
 
 df['range_auc'] = df.max_dev_auc - df.min_dev_auc
 
-[display(shaderdots(df, p, 'range_auc', 500, 500, x_axis_type='log'))
+[display(shaderdots(df, p, 'range_auc', 500, 500, x_axis_type='log', category_column='iteration_type'))
  for p in sorted(set(LOG_PARAMETERS) & set(df.columns))];
 
-[display(shaderdots(df, p, 'range_auc', 500, 500))
+[display(shaderdots(df, p, 'range_auc', 500, 500, category_column='iteration_type'))
  for p in sorted((set(CONT_PARAMETERS) | set(INT_PARAMETERS)) & set(df.columns))];
 
 # ### logloss
 
-display(shaderdots(df, 'param_learning_rate', 'max_overfit_binary_logloss', 500, 500, x_axis_type='log'));
+display(shaderdots(df, 'param_learning_rate', 'min_overfit_binary_logloss', 500, 500, x_axis_type='log', category_column='iteration_type'));
 
-display(shaderdots(df, 'iteration', 'max_dev_binary_logloss', 500, 500));
+display(shaderdots(df, 'iteration', 'min_dev_binary_logloss', 500, 500, category_column='iteration_type'));
 
-display(shaderdots(df, 'iteration', 'mean_dev_binary_logloss', 500, 500));
+display(shaderdots(df, 'iteration', 'mean_dev_binary_logloss', 500, 500, category_column='iteration_type'));
 
 # ### whole vs cv training
 
