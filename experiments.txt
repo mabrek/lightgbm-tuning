@@ -11,3 +11,5 @@
 ./search-telecom-churn-logreg.py --name logreg --log experiments/logreg.log --processes 4 --iterations 10000 --n-folds 20 --n-seeds 1 --split-kind shuffle-split
 
 ./coordinate-search.py --input-log experiments/wide-best.log --output-log experiments/wide-best-coordinates.log --coordinate-iterations 50 --processes 6 --n-folds 20 --split-kind shuffle-split
+
+./search-telecom-churn-better.py --name better --log experiments/better.log --n-folds 20 --split-kind shuffle-split --iterations 5000 --processes 6 --n-seeds 3
