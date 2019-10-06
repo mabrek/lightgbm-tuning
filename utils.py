@@ -39,6 +39,7 @@ import argparse
 from functools import partial
 import gc
 from glob import glob
+import os
 
 import numpy as np
 import pandas as pd
@@ -266,6 +267,7 @@ def log_json(file, data):
     with open(file, 'at') as output:
         data['timestamp'] = datetime.now().isoformat()
         print(json.dumps(data), file=output, flush=True)
+        os.fsync(output.fileno())
 
 
 def evaluate_lgb_experiment(experiment, experiment_name,
