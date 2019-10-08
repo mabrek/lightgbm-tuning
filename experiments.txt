@@ -13,3 +13,5 @@
 ./coordinate-search.py --input-log experiments/wide-best.log --output-log experiments/wide-best-coordinates.log --coordinate-iterations 50 --processes 6 --n-folds 20 --split-kind shuffle-split
 
 ./search-telecom-churn-better.py --name better --log experiments/better.log --n-folds 20 --split-kind shuffle-split --iterations 5000 --processes 6 --n-seeds 3
+
+./coordinate-search.py --input-log experiments/better-best.log --output-log experiments/better-best-coordinates.log --coordinate-iterations 50 --processes 6 --n-folds 20 --split-kind shuffle-split
