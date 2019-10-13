@@ -73,9 +73,13 @@ df.mean_overfit_auc.describe()
 
 display(shaderdots(df, 'mean_dev_auc', 'max_overfit_auc', 500, 500, category_column='iteration_type'))
 
+display(shaderdots(df, 'min_dev_auc', 'max_overfit_auc', 500, 500, category_column='iteration_type'))
+
 # ### range auc
 
 df['range_auc'] = df.max_dev_auc - df.min_dev_auc
+
+display(shaderdots(df, 'range_auc', 'max_overfit_auc', 500, 500, category_column='iteration_type'))
 
 [display(shaderdots(df, p, 'range_auc', 500, 500, x_axis_type='log', category_column='iteration_type'))
  for p in sorted(set(LOG_PARAMETERS) & set(df.columns))];
@@ -98,4 +102,4 @@ df['whole_cv_diff_mean_auc'] = df.mean_whole_validation_auc - df.mean_validation
 
 df[['whole_cv_diff_min_auc', 'whole_cv_diff_mean_auc']][df.mean_train_auc > 0.65].hist(bins=500);
 
-
+df[['whole_cv_diff_min_auc', 'whole_cv_diff_mean_auc']][df.mean_train_auc > 0.65].describe()
