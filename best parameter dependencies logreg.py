@@ -51,25 +51,9 @@ compare_columns = ['mean_dev_auc', 'mean_validation_auc',
 
 best_mean_dev[compare_columns].describe().T
 
-best_mean_dev.min_whole_validation_auc.corr(best_mean_dev.mean_dev_auc, method='spearman')
-
-best_mean_dev.mean_whole_validation_auc.corr(best_mean_dev.mean_dev_auc, method='spearman')
-
 best_min_dev[compare_columns].describe().T
 
-best_min_dev.min_whole_validation_auc.corr(best_min_dev.min_dev_auc, method='spearman')
-
-best_min_dev.min_whole_validation_auc.corr(best_min_dev.mean_dev_auc, method='spearman')
-
 true_best[compare_columns].describe().T
-
-true_best.min_whole_validation_auc.corr(true_best.min_dev_auc, method='spearman')
-
-true_best.min_whole_validation_auc.corr(true_best.mean_dev_auc, method='spearman')
-
-true_best.mean_whole_validation_auc.corr(true_best.min_dev_auc, method='spearman')
-
-true_best.mean_whole_validation_auc.corr(true_best.mean_dev_auc, method='spearman')
 
 best_mean_dev.merge(true_best, on=['file', 'experiment_id'])\
     .groupby(['file', 'experiment_id']).ngroups
