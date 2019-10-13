@@ -549,16 +549,12 @@ def unfold_iterations(df, n_folds, exclude=None):
                                      for m in SUBSET_METRICS}
 
             iterations = pd.DataFrame(
-                {one_split_metrics.get(k, k): getattr(row, k)
+                {one_split_metrics.get(k): getattr(row, k)
                  for k in row._fields
-                 if (k not in ['Index', 'param_eval_at', 'param_metric']
-                     and (k in one_split_metrics
-                          or (not k.startswith('split')
-                              and not k.startswith('whole_'))))})
+                 if k in one_split_metrics})
 
-            if 'experiment_id' not in row._fields:
-                iterations['experiment_id'] = row.Index
-
+            iterations['experiment_id'] = row.experiment_id
+            iterations['param_seed'] = row.param_seed
             iterations['split'] = s
 
             iterations.index.name = 'iteration'
@@ -567,7 +563,10 @@ def unfold_iterations(df, n_folds, exclude=None):
 
             rows.append(iterations)
 
-    return pd.concat(rows, ignore_index=True, sort=True)
+    experiments = df.loc[:, ~df.columns.str.match(r'^(whole_|split)')]\
+                    .groupby('experiment_id').first()
+
+    return experiments, pd.concat(rows, ignore_index=True, sort=True)
 
 
 def drop_boring_columns(df):
