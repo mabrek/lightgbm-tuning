@@ -46,7 +46,8 @@ true_best = top_min_whole_validation_auc(read_files(files), top_k)
 # -
 
 compare_columns = ['mean_dev_auc', 'mean_validation_auc',
-               'mean_whole_validation_auc', 'min_dev_auc', 'min_validation_auc', 'min_whole_validation_auc']
+               'mean_whole_validation_auc', 'max_overfit_auc',
+                   'min_dev_auc', 'min_validation_auc', 'min_whole_validation_auc']
 
 best_mean_dev[compare_columns].describe().T
 
