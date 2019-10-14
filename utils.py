@@ -563,7 +563,7 @@ def unfold_iterations(df, n_folds, exclude=None):
 
             rows.append(iterations)
 
-    experiments = df.loc[:, ~df.columns.str.match(r'^(whole_|split)')]\
+    experiments = df.loc[:, ~df.columns.str.match(r'^(whole_|split|param_seed)')]\
                     .groupby('experiment_id').first()
 
     return experiments, pd.concat(rows, ignore_index=True, sort=True)
