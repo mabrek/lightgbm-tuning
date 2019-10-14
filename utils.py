@@ -23,7 +23,7 @@ __all__ = [
     'read_telecom_churn',
     'exclude_columns',
     'read_files',
-    'chunked_apply',
+    'summarize_to_chunks',
     'aggregate_chunks'
 ]
 
@@ -580,10 +580,10 @@ def drop_boring_columns(df):
     return df
 
 
-def chunked_apply(f, chunk_prefix, func, chunksize=1000, verbose=False):
+def summarize_to_chunks(f, chunk_prefix, n_folds, chunksize=1000, exclude=None, verbose=False):
     n = 0
     for l in read_json_log(f, chunksize):
-        chunk = func(l)
+        chunk  = summarize_logs(l, n_folds, exclude=exclude)
         chunk_name = f'{chunk_prefix}{n:03d}.pkl'
         chunk.to_pickle(chunk_name)
         if verbose:
