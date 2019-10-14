@@ -569,6 +569,19 @@ def unfold_iterations(df, n_folds, exclude=None):
     return experiments, pd.concat(rows, ignore_index=True, sort=True)
 
 
+def unfold_to_chunks(f, chunk_prefix, n_folds, chunksize=1000, exclude=None, verbose=False):
+    n = 0
+    for l in read_json_log(f, chunksize):
+        experiments, iterations = unfold_iterations(l, n_folds, exclude=exclude)
+        experiments.to_pickle(f'{chunk_prefix}experiments{n:03d}.pkl')
+        iterations.to_pickle(f'{chunk_prefix}iterations{n:03d}.pkl')
+        if verbose:
+            print(n, 'written')
+        del experiments, iterations, l
+        gc.collect()
+        n += 1
+
+
 def drop_boring_columns(df):
     df.dropna(how='all', axis='columns', inplace=True)
     df.drop(columns=['param_eval_at', 'param_metric'], errors='ignore', inplace=True)
