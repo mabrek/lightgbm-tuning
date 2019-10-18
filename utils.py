@@ -529,6 +529,15 @@ def summarize_logs(df, n_folds, exclude=None):
     return res
 
 
+# from https://medium.com/bigdatarepublic/advanced-pandas-optimize-speed-and-memory-a654b53be6c2
+def optimize_numerics(df: pd.DataFrame) -> pd.DataFrame:
+    floats = df.select_dtypes(include=['float64']).columns.tolist()
+    df[floats] = df[floats].apply(pd.to_numeric, downcast='float')
+    ints = df.select_dtypes(include=['int64']).columns.tolist()
+    df[ints] = df[ints].apply(pd.to_numeric, downcast='integer')
+    return df
+
+
 def unfold_iterations(df, n_folds, exclude=None):
     df = df[df.success.fillna(False)]\
         .pipe(exclude_columns, pattern=exclude)\
@@ -551,7 +560,9 @@ def unfold_iterations(df, n_folds, exclude=None):
             iterations = pd.DataFrame(
                 {one_split_metrics.get(k): getattr(row, k)
                  for k in row._fields
-                 if k in one_split_metrics})
+                 if k in one_split_metrics},
+                dtype=np.float32
+            )
 
             iterations['experiment_id'] = row.experiment_id
             iterations['param_seed'] = row.param_seed
@@ -561,10 +572,13 @@ def unfold_iterations(df, n_folds, exclude=None):
             iterations.reset_index(inplace=True)
             iterations.iteration += 1
 
-            rows.append(iterations)
+            rows.append(optimize_numerics(iterations))
 
     experiments = df.loc[:, ~df.columns.str.match(r'^(whole_|split|param_seed)')]\
-                    .groupby('experiment_id').first().reset_index()
+                    .groupby('experiment_id')\
+                    .first()\
+                    .reset_index()\
+                    .pipe(optimize_numerics)
 
     return experiments, pd.concat(rows, ignore_index=True, sort=True)
 
