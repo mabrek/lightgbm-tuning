@@ -729,3 +729,26 @@ def assert_logs_equal(left_log, right_log, n_folds):
     left = pre_compare_log(left_log, n_folds)
     right = pre_compare_log(right_log, n_folds)
     assert_frame_equal(left, right)
+
+
+def quantile_bins(df, x, y, quantiles, bins):
+    cut, edges = pd.qcut(df[x], bins, retbins=True)
+    cut.cat.categories = edges[:-1]
+    aggs = [(str(q), partial(pd.Series.quantile, q=q)) for q in quantiles]
+    aggregated = df.groupby(cut)[y].agg(aggs)
+    aggregated.index = aggregated.index.astype(float)
+    return aggregated
+
+
+def experiment_quantiles(experiments, folds, x, y, quantiles, bins):
+    return quantile_bins(
+        pd.merge(
+            folds[['experiment_id', y]],
+            experiments[['experiment_id', x]],
+            copy=False)
+        .reset_index(drop=True),
+        x,
+        y,
+        quantiles,
+        bins
+    )
