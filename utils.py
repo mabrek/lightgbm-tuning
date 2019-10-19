@@ -753,5 +753,6 @@ def experiment_quantiles(experiments, folds, x, y, quantiles, bins, quantile_spl
         x,
         y,
         quantiles,
-        bins
+        bins,
+        quantile_split
     )
