@@ -41,7 +41,7 @@ pd.set_option('display.max_columns', None)
 # %load_ext autoreload
 # %autoreload 2
 
-n_chunks = 10
+n_chunks = 7
 
 experiments = pd.concat(
     [pd.read_pickle(f'experiments/wide-20shuffle-3seed-fullexperiments{n:03d}.pkl') for n in range(n_chunks)],
@@ -70,22 +70,36 @@ gc.collect()
 cv_folds['overfit_auc'] = cv_folds.train_auc - cv_folds.dev_auc
 
 quantiles = [0, 0.5, 0.8, 0.9, 0.95, 0.99, 1]
-bins = 75
+bins = 50
 
 [experiment_quantiles(experiments, cv_folds, p, 'dev_auc', quantiles, bins, quantile_split=True)\
         .plot(logx=True, legend=False, grid=True)
     for p in sorted(set(LOG_PARAMETERS) & set(experiments.columns))];
 
 [experiment_quantiles(experiments, cv_folds, p, 'dev_auc', quantiles, bins, quantile_split=False)\
-        .plot(logx=True, legend=False, grid=True)
+        .dropna(how='all')\
+        .plot(logx=False, legend=False, grid=True)
     for p in sorted((set(CONT_PARAMETERS) | set(INT_PARAMETERS)) & set(experiments.columns))];
 
-[experiment_quantiles(experiments, cv_folds, p, 'overfit_auc', quantiles, bins, quantile_split=True)\
-        .plot(logx=True, legend=False, grid=True)
-    for p in sorted(set(LOG_PARAMETERS) & set(experiments.columns))];
 
-[experiment_quantiles(experiments, cv_folds, p, 'overfit_auc', quantiles, bins, quantile_split=False)\
-        .plot(logx=True, legend=False, grid=True)
-    for p in sorted((set(CONT_PARAMETERS) | set(INT_PARAMETERS)) & set(experiments.columns))];
 
-display(shaderdots(cv_folds, 'dev_auc', 'validation_auc', 700, 700, category_column='split'))
+
+
+splits_merged = pd.merge(
+    cv_folds.loc[cv_folds.split == 7, ['experiment_id', 'param_seed', 'iteration', 'validation_auc']],
+    cv_folds.loc[cv_folds.split == 11, ['experiment_id', 'param_seed', 'iteration', 'validation_auc']],
+    on=['experiment_id', 'param_seed', 'iteration'],
+    copy=False).reset_index(drop=True)
+
+display(shaderdots(splits_merged, 'validation_auc_x', 'validation_auc_y', 700, 700))
+
+whole_merged = pd.merge(
+    cv_folds[['experiment_id', 'param_seed', 'iteration', 'validation_auc', 'split']],
+    whole_folds[['experiment_id', 'param_seed', 'iteration', 'validation_auc']],
+    on=['experiment_id', 'param_seed', 'iteration'],
+    suffixes=('', '_whole'),
+    copy=False).reset_index(drop=True)
+
+display(shaderdots(whole_merged, 'validation_auc', 'validation_auc_whole', 700, 700))
+
+
