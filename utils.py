@@ -731,7 +731,7 @@ def assert_logs_equal(left_log, right_log, n_folds):
     assert_frame_equal(left, right)
 
 
-def quantile_bins(df, x, y, quantiles, bins, quantile_split=True):
+def quantile_bins(df, x, y, quantiles, bins, quantile_split):
     if quantile_split:
         cut, edges = pd.qcut(df[x], bins, retbins=True)
     else:
@@ -743,7 +743,7 @@ def quantile_bins(df, x, y, quantiles, bins, quantile_split=True):
     return aggregated
 
 
-def experiment_quantiles(experiments, folds, x, y, quantiles, bins):
+def experiment_quantiles(experiments, folds, x, y, quantiles, bins, quantile_split):
     return quantile_bins(
         pd.merge(
             folds[['experiment_id', y]],
