@@ -731,8 +731,11 @@ def assert_logs_equal(left_log, right_log, n_folds):
     assert_frame_equal(left, right)
 
 
-def quantile_bins(df, x, y, quantiles, bins):
-    cut, edges = pd.qcut(df[x], bins, retbins=True)
+def quantile_bins(df, x, y, quantiles, bins, quantile_split=True):
+    if quantile_split:
+        cut, edges = pd.qcut(df[x], bins, retbins=True)
+    else:
+        cut, edges = pd.cut(df[x], bins, retbins=True)
     cut.cat.categories = edges[:-1]
     aggs = [(str(q), partial(pd.Series.quantile, q=q)) for q in quantiles]
     aggregated = df.groupby(cut)[y].agg(aggs)
