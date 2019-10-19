@@ -543,10 +543,7 @@ def unfold_iterations(df, n_folds, exclude=None):
         .pipe(exclude_columns, pattern=exclude)\
         .rename(columns=lambda x: x.replace('@', '_'))
 
-    if set(WHOLE_METRICS).issubset(set(df.columns)):
-        splits = list(chain([-1], range(n_folds)))
-    else:
-        splits = list(range(n_folds))
+    splits = list(chain([-1], range(n_folds)))
     rows = []
     for row in df.itertuples():
         for s in splits:
