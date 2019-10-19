@@ -81,9 +81,7 @@ bins = 50
         .plot(logx=False, legend=False, grid=True)
     for p in sorted((set(CONT_PARAMETERS) | set(INT_PARAMETERS)) & set(experiments.columns))];
 
-
-
-
+display(shaderdots(cv_folds, 'dev_auc', 'validation_auc', 700, 700, category_column='split'))
 
 splits_merged = pd.merge(
     cv_folds.loc[cv_folds.split == 7, ['experiment_id', 'param_seed', 'iteration', 'validation_auc']],
@@ -101,5 +99,3 @@ whole_merged = pd.merge(
     copy=False).reset_index(drop=True)
 
 display(shaderdots(whole_merged, 'validation_auc', 'validation_auc_whole', 700, 700))
-
-
