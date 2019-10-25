@@ -189,6 +189,7 @@ def parse_args():
                         type=str,
                         default='k-folds',
                         choices=['k-folds', 'shuffle-split'])
+    parser.add_argument('--num-boost-round', type=int, default=500)
     return parser.parse_args()
 
 
