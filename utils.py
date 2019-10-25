@@ -502,7 +502,7 @@ def summarize_logs(df, n_folds, exclude=None):
         iterations.reset_index(inplace=True)
         iterations.iteration += 1
 
-        rows.append(iterations)
+        rows.append(optimize_numerics(iterations))
     
     all_seeds = pd.concat(rows, ignore_index=True)
     all_seeds['cnt'] = 1
