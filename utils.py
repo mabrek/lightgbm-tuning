@@ -511,6 +511,7 @@ def summarize_logs(df, n_folds, exclude=None):
     aggregations = {}
     for c in all_seeds.columns:
         if c.startswith('mean_'):
+            # TODO cast to np.float32
             aggregations[c] = np.mean
         elif c.startswith('min_'):
             aggregations[c] = np.min
@@ -639,7 +640,8 @@ def aggregate_chunks(chunks_glob):
             aggregations[c] = np.min  # min is faster than lambda with .iloc[0]
     df = df\
         .groupby(['experiment_id', 'iteration'])\
-        .aggregate(aggregations)
+        .aggregate(aggregations)\
+        .pipe(optimize_numerics)
     gc.collect()
 
     for c in df.columns:
