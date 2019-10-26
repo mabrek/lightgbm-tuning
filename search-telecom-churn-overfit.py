@@ -22,7 +22,7 @@ if __name__ == "__main__":
         'learning_rate': loguniform(low=-6, high=1, base=10),
         'num_leaves': randint(2, 4000),
         'max_depth': randint(1, 10000),
-        'min_data_in_leaf': randint(1, 200),
+        'min_data_in_leaf': randint(1, 400),
         'min_sum_hessian_in_leaf': loguniform(low=-10, high=2.5, base=10),
         'bagging_enable': [False, True],
         'bagging_fraction': uniform(loc=0.5, scale=0.5),
