@@ -20,7 +20,7 @@ if __name__ == "__main__":
         'verbosity': [-1],
 
         'learning_rate': loguniform(low=-6, high=1, base=10),
-        'num_leaves': randint(2, 4000),
+        'num_leaves': randint(2, 10000),
         'max_depth': randint(1, 10000),
         'min_data_in_leaf': randint(1, 400),
         'min_sum_hessian_in_leaf': loguniform(low=-10, high=2.5, base=10),
