@@ -43,6 +43,8 @@ df = pd.concat(read_files(['./experiments/wide-10krounds-5folds.pkl'
                            ]), 
                ignore_index=True, sort=True)
 
+df.experiment_id.nunique()
+
 df['iteration_rank'] = df.sort_values('mean_dev_auc', ascending=False)\
     .groupby(['file', 'experiment_id', 'param_seed'])\
     .cumcount()
