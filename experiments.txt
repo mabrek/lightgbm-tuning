@@ -18,4 +18,6 @@
 
 ./search-telecom-churn.py --name wide-10krounds-5folds --log experiments/wide-10krounds-5folds.log --n-folds 5 --split-kind k-folds --iterations 5000 --processes 6 --n-seeds 3 --num-boost-round 10000
 
-./search-telecom-churn-overfit.py --name overfit --log experiments/overfit.log --n-folds 5 --split-kind k-folds --iterations 5000 --processes 6 --n-seeds 3 --num-boost-round 10000
+./search-telecom-churn-overfit.py --name overfit --log experiments/overfit.log --n-folds 5 --split-kind k-folds --iterations 5000 --processes 6 --n-seeds 3
+
+./search-telecom-churn-overfit.py --name overfit-true-10k --log experiments/overfit-true-10k.log --n-folds 5 --split-kind k-folds --iterations 5000 --processes 6 --n-seeds 3 --num-boost-round 10000
