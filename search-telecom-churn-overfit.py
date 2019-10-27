@@ -58,7 +58,7 @@ if __name__ == "__main__":
             experiment_name=args.name,
             log_file=args.log,
             log_lock=log_lock,
-            num_boost_round=500,
+            num_boost_round=args.num_boost_round,
             n_seeds=args.n_seeds,
             X_train=X_train, X_val=X_val, y_train=y_train, y_val=y_val,
             folds=folds

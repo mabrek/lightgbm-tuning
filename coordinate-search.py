@@ -25,6 +25,7 @@ if __name__ == "__main__":
                         type=str,
                         default='k-folds',
                         choices=['k-folds', 'shuffle-split'])
+    parser.add_argument('--num-boost-round', type=int, default=500)
     args = parser.parse_args()
 
     log_lock = Lock()
@@ -86,7 +87,7 @@ if __name__ == "__main__":
         log_data['experiment_id'] = experiment_id
         log_data.update({'param_' + k: v for k, v in parameters.items()})
         metrics = evaluate_lgb_parameters(
-            parameters, num_boost_round=500,
+            parameters, num_boost_round=args.num_boost_round,
             X_train=X_train, X_val=X_val, y_train=y_train, y_val=y_val,
             folds=folds)
         metrics['success'] = True
