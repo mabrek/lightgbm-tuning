@@ -40,8 +40,9 @@ pd.set_option('display.max_columns', None)
 # %load_ext autoreload
 # %autoreload 2
 
-df = pd.concat(read_files(['./experiments/overfit-true-10k-2.pkl',
-                           './experiments/overfit-true-10k-3.tmp.pkl',
+df = pd.concat(read_files(['./experiments/overfit-true-10k.pkl',
+                           './experiments/overfit-true-10k-2.pkl',
+                           './experiments/overfit-true-10k-3.pkl',
                            './experiments/overfit-true-10k-4.pkl',
                            ]), 
                ignore_index=True, sort=True)
