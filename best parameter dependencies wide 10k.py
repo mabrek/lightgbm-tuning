@@ -107,6 +107,7 @@ limited.shape
 # -
 
 limited_best_iteration = limited.sort_values('min_whole_validation_auc').groupby(['file', 'experiment_id']).last()
+del limited
 limited_best_iteration.shape
 
 limited_bad = limited_best_iteration[limited_best_iteration.min_whole_validation_auc < 0.6]
@@ -116,6 +117,9 @@ limited_bad.shape
 # TODO pikachu with bruises reaction
 
 # ### top parameters
+
+with pd.option_context('display.max_rows', None, 'display.max_columns', None):
+    print(best_iteration.sort_values('mean_dev_auc', ascending=False).head(2).T)
 
 with pd.option_context('display.max_rows', None, 'display.max_columns', None):
     print(pd.read_pickle('./experiments/wide-10krounds-5folds.pkl')\
