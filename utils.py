@@ -564,7 +564,8 @@ def unfold_iterations(df, n_folds, exclude=None):
             )
 
             iterations['experiment_id'] = row.experiment_id
-            iterations['param_seed'] = row.param_seed
+            if 'param_seed' in row._fields:
+                iterations['param_seed'] = row.param_seed
             iterations['split'] = s
 
             iterations.index.name = 'iteration'
@@ -724,14 +725,15 @@ def top_min_whole_validation_auc(dfs, n):
 
 
 def pre_compare_log(log, n_folds):
-    return unfold_iterations(read_json_log(log), n_folds)\
-        .drop(columns='timestamp')
+    experiments, iterations = unfold_iterations(read_json_log(log), n_folds)
+    return experiments.drop(columns='timestamp'), iterations
 
 
 def assert_logs_equal(left_log, right_log, n_folds):
-    left = pre_compare_log(left_log, n_folds)
-    right = pre_compare_log(right_log, n_folds)
-    assert_frame_equal(left, right)
+    left_experiments, left_iterations = pre_compare_log(left_log, n_folds)
+    right_experiments, right_iterations = pre_compare_log(right_log, n_folds)
+    assert_frame_equal(left_experiments, right_experiments)
+    assert_frame_equal(left_iterations, right_iterations)
 
 
 def quantile_bins(df, x, y, quantiles, bins, quantile_split):
