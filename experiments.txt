@@ -8,8 +8,6 @@
 
 ./coordinate-search.py --input-log experiments/good-best.log --output-log experiments/good-best-coordinates.log --coordinate-iterations 33 --processes 8 --n-folds 20 --split-kind shuffle-split
 
-./search-telecom-churn-logreg.py --name logreg --log experiments/logreg.log --processes 4 --iterations 10000 --n-folds 20 --n-seeds 1 --split-kind shuffle-split
-
 ./coordinate-search.py --input-log experiments/wide-best.log --output-log experiments/wide-best-coordinates.log --coordinate-iterations 50 --processes 6 --n-folds 20 --split-kind shuffle-split
 
 ./search-telecom-churn-better.py --name better --log experiments/better.log --n-folds 20 --split-kind shuffle-split --iterations 5000 --processes 6 --n-seeds 3
@@ -21,3 +19,5 @@
 ./search-telecom-churn-overfit.py --name overfit --log experiments/overfit.log --n-folds 5 --split-kind k-folds --iterations 5000 --processes 6 --n-seeds 3
 
 ./search-telecom-churn-overfit.py --name overfit-true-10k --log experiments/overfit-true-10k-3.log --n-folds 5 --split-kind k-folds --iterations 5000 --processes 2 --n-seeds 3 --num-boost-round 10000
+
+./search-telecom-churn-logreg.py --name logreg --log experiments/logreg.log --processes 6 --iterations 50000 --n-folds 20 --n-seeds 1 --split-kind shuffle-split
