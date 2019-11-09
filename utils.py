@@ -726,7 +726,14 @@ def top_min_whole_validation_auc(dfs, n):
 
 def pre_compare_log(log, n_folds):
     experiments, iterations = unfold_iterations(read_json_log(log), n_folds)
-    return experiments.drop(columns='timestamp'), iterations
+    experiments = experiments\
+        .drop(columns='timestamp')\
+        .sort_values('experiment_id')\
+        .reset_index(drop=True)
+    iterations = iterations\
+        .sort_values(['experiment_id', 'iteration', 'split'])\
+        .reset_index(drop=True)
+    return experiments, iterations
 
 
 def assert_logs_equal(left_log, right_log, n_folds):
