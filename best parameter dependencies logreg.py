@@ -26,7 +26,8 @@ import matplotlib
 from pylab import rcParams
 
 from utils import METRICS, CONT_PARAMETERS, LOG_PARAMETERS, SET_PARAMETERS, INT_PARAMETERS, read_files,\
-    top_mean_dev_auc, top_min_whole_validation_auc, top_min_dev_auc, read_files, LOGREG_LOG_PARAMETERS
+    top_mean_dev_auc, top_min_whole_validation_auc, top_min_dev_auc, read_files, LOGREG_LOG_PARAMETERS,\
+    LOGREG_CONT_PARAMETERS
 # -
 
 rcParams['figure.figsize'] = 20, 5
@@ -35,7 +36,7 @@ pd.set_option('display.max_columns', None)
 # %load_ext autoreload
 # %autoreload 2
 
-files = ['./experiments/logreg.pkl']
+files = ['./experiments/logreg.pkl', './experiments/logreg-liblinear.pkl']
 
 # +
 top_k = 1000
@@ -76,7 +77,7 @@ true_best.min_whole_validation_auc.hist(bins=100);
 best.groupby('param_clf__fit_intercept').size()
 
 pd.plotting.scatter_matrix(
-    pd.concat([np.log10(best[list(set(LOGREG_LOG_PARAMETERS))])],
+    pd.concat([np.log10(best[list(set(LOGREG_LOG_PARAMETERS))]), best[LOGREG_CONT_PARAMETERS]],
               axis='columns',
               sort=True
              ).rename(lambda x: x.replace('param_clf__', ''), axis='columns').sort_index(axis=1),
