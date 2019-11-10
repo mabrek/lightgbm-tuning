@@ -759,7 +759,7 @@ def pre_compare_log(log, n_folds):
 def assert_logs_equal(left_log, right_log, n_folds):
     left_experiments, left_iterations = pre_compare_log(left_log, n_folds)
     right_experiments, right_iterations = pre_compare_log(right_log, n_folds)
-    assert_frame_equal(left_experiments, right_experiments)
+    assert_frame_equal(left_experiments, right_experiments, check_exact=True)
     assert_frame_equal(left_iterations, right_iterations)
 
 
