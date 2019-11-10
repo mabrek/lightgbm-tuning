@@ -264,8 +264,13 @@ class loguniform:
 
 
 def read_json_log(f, chunksize=None):
-    return pd.read_json(f, typ='frame', orient='records', lines=True,
-                        chunksize=chunksize, dtype={'success': 'object'})
+    return pd.read_json(f,
+                        typ='frame',
+                        orient='records',
+                        lines=True,
+                        precise_float=True,
+                        chunksize=chunksize,
+                        dtype={'success': 'object'})
 
 
 def log_json(file, data):
