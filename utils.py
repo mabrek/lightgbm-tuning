@@ -570,6 +570,8 @@ def unfold_iterations(df, n_folds, exclude=None):
             iterations['experiment_id'] = row.experiment_id
             if 'param_seed' in row._fields:
                 iterations['param_seed'] = row.param_seed
+            if 'param_clf__random_state' in row._fields:
+                iterations['param_clf__random_state'] = row.param_clf__random_state
             iterations['split'] = s
 
             iterations.index.name = 'iteration'
@@ -730,12 +732,21 @@ def top_min_whole_validation_auc(dfs, n):
 
 def pre_compare_log(log, n_folds):
     experiments, iterations = unfold_iterations(read_json_log(log), n_folds)
+    if 'param_seed' in experiments.columns:
+        sort_experiments = ['experiment_id', 'param_seed']
+        sort_iterations = ['experiment_id', 'param_seed', 'split', 'iteration']
+    elif 'param_clf__random_state' in experiments.columns:
+        sort_experiments = ['experiment_id', 'param_clf__random_state']
+        sort_iterations = ['experiment_id', 'param_clf__random_state', 'split', 'iteration']
+    else:
+        sort_experiments = ['experiment_id']
+        sort_iterations = ['experiment_id', 'split', 'iteration']
     experiments = experiments\
         .drop(columns='timestamp')\
-        .sort_values(['experiment_id', 'param_seed'])\
+        .sort_values(sort_experiments)\
         .reset_index(drop=True)
     iterations = iterations\
-        .sort_values(['experiment_id', 'param_seed', 'split', 'iteration'])\
+        .sort_values(sort_iterations)\
         .reset_index(drop=True)
     return experiments, iterations
 
