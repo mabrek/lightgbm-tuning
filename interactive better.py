@@ -27,10 +27,11 @@ from pylab import rcParams
 from IPython.display import display
 
 from bokeh.io import output_notebook
+from bokeh.resources import Resources
 
 from utils import METRICS, CONT_PARAMETERS, LOG_PARAMETERS, SET_PARAMETERS, INT_PARAMETERS, shaderdots, read_files
 
-output_notebook()
+output_notebook(resources=Resources(mode='inline'))
 # -
 
 rcParams['figure.figsize'] = 20, 5
