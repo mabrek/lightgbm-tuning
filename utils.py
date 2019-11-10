@@ -728,10 +728,10 @@ def pre_compare_log(log, n_folds):
     experiments, iterations = unfold_iterations(read_json_log(log), n_folds)
     experiments = experiments\
         .drop(columns='timestamp')\
-        .sort_values('experiment_id')\
+        .sort_values(['experiment_id', 'param_seed'])\
         .reset_index(drop=True)
     iterations = iterations\
-        .sort_values(['experiment_id', 'iteration', 'split'])\
+        .sort_values(['experiment_id', 'param_seed', 'split', 'iteration'])\
         .reset_index(drop=True)
     return experiments, iterations
 
