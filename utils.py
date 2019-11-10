@@ -130,6 +130,10 @@ LOGREG_LOG_PARAMETERS = [
     'param_clf__tol'
 ]
 
+LOGREG_CONT_PARAMETERS = [
+    'param_clf__intercept_scaling'
+]
+
 
 def read_telecom_churn(n_folds, split_kind, random_state=67345):
     df = pd.read_csv(
