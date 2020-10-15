@@ -1,4 +1,4 @@
-FROM python:3.9.0-buster
+FROM python:3.8.6-buster
 
 COPY requirements.txt /tmp
 
