@@ -10,6 +10,7 @@ RUN poetry install --no-root --no-dev
 
 ENV OPENBLAS_NUM_THREADS=1
 ENV NUMEXPR_NUM_THREADS=1
+ENV OMP_NUM_THREADS=1
 
 
 FROM runtime as development
