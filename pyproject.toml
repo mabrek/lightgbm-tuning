@@ -28,5 +28,5 @@ pytest = "^6.1.1"
 pre-commit = "^2.7.1"
 
 [build-system]
-requires = ["poetry>=0.12"]
+requires = ["poetry>=1.0.10"]
 build-backend = "poetry.masonry.api"
