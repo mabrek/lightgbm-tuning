@@ -37,3 +37,9 @@ build-backend = "poetry.masonry.api"
 [tool.black]
 line-length = 80
 target-version = ["py38"]
+include = '''
+(
+    lightgbm_tuning\.py$
+    | /scripts/.*\.py$
+)
+'''
