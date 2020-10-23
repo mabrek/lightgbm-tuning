@@ -690,7 +690,9 @@ def unfold_to_chunks(
 ):
     n = 0
     for line in read_json_log(f, chunksize):
-        experiments, iterations = unfold_iterations(line, n_folds, exclude=exclude)
+        experiments, iterations = unfold_iterations(
+            line, n_folds, exclude=exclude
+        )
         experiments.to_pickle(f"{chunk_prefix}experiments{n:03d}.pkl")
         iterations.to_pickle(f"{chunk_prefix}iterations{n:03d}.pkl")
         if verbose:
