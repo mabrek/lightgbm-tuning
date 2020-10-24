@@ -29,7 +29,7 @@ from IPython.display import display
 from bokeh.io import output_notebook
 from bokeh.resources import Resources
 
-from utils import LOGREG_LOG_PARAMETERS, LOGREG_CONT_PARAMETERS, shaderdots
+from lightgbm_tuning import LOGREG_LOG_PARAMETERS, LOGREG_CONT_PARAMETERS, shaderdots
 
 output_notebook(resources=Resources(mode='inline'))
 # -

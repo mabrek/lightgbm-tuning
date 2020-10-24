@@ -5,7 +5,7 @@ from multiprocessing import Lock
 from scipy.stats import randint as randint
 from scipy.stats import uniform as uniform
 
-from utils import (
+from lightgbm_tuning import (
     loguniform,
     parse_args,
     read_telecom_churn,

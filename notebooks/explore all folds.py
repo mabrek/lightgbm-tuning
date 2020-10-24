@@ -27,7 +27,7 @@ import matplotlib
 from pylab import rcParams
 from IPython.display import display
 
-from utils import METRICS, CONT_PARAMETERS, LOG_PARAMETERS, SET_PARAMETERS, INT_PARAMETERS, shaderdots,\
+from lightgbm_tuning import METRICS, CONT_PARAMETERS, LOG_PARAMETERS, SET_PARAMETERS, INT_PARAMETERS, shaderdots,\
     quantile_bins, experiment_quantiles
 
 from bokeh.io import output_notebook

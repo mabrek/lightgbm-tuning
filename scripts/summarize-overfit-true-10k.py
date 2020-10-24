@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from utils import *
+from lightgbm_tuning import *
 
 summarize_to_chunks(
     "experiments/overfit-true-10k-3.log.xz",

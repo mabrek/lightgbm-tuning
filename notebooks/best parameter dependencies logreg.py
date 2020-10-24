@@ -25,7 +25,7 @@ import matplotlib
 
 from pylab import rcParams
 
-from utils import METRICS, CONT_PARAMETERS, LOG_PARAMETERS, SET_PARAMETERS, INT_PARAMETERS, read_files,\
+from lightgbm_tuning import METRICS, CONT_PARAMETERS, LOG_PARAMETERS, SET_PARAMETERS, INT_PARAMETERS, read_files,\
     top_mean_dev_auc, top_min_whole_validation_auc, top_min_dev_auc, read_files, LOGREG_LOG_PARAMETERS,\
     LOGREG_CONT_PARAMETERS
 # -

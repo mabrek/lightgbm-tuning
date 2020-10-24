@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from utils import *
+from lightgbm_tuning import *
 
 summarize_to_chunks(
     "experiments/wide-10krounds-5folds.log.xz",

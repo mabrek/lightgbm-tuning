@@ -8,7 +8,7 @@ from scipy.stats import randint as randint
 from scipy.stats import uniform as uniform
 from sklearn.model_selection import ParameterSampler
 
-from utils import (
+from lightgbm_tuning import (
     read_json_log,
     read_telecom_churn,
     run_pool,

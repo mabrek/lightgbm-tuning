@@ -5,7 +5,7 @@ import argparse
 
 import numpy as np
 
-from utils import (
+from lightgbm_tuning import (
     read_json_log,
     read_telecom_churn,
     run_pool,

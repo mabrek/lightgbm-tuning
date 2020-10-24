@@ -28,7 +28,7 @@ from IPython.display import display
 
 from bokeh.io import output_notebook
 
-from utils import METRICS, CONT_PARAMETERS, LOG_PARAMETERS, SET_PARAMETERS, INT_PARAMETERS, shaderdots, read_files
+from lightgbm_tuning import METRICS, CONT_PARAMETERS, LOG_PARAMETERS, SET_PARAMETERS, INT_PARAMETERS, shaderdots, read_files
 
 output_notebook()
 # -
