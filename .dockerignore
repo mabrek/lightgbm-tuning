@@ -1,5 +1,8 @@
-data
-experiments
+__pycache__
 .git
 .ipynb_checkpoints
-__pycache__
+*.egg-info
+**/__pycache__/
+data
+experiments
+notebooks
