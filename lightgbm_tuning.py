@@ -140,6 +140,7 @@ LOGREG_CONT_PARAMETERS = ["param_clf__intercept_scaling"]
 
 
 def read_telecom_churn(n_folds, split_kind, random_state=67345):
+    # TODO move data path to config
     df = pd.read_csv(
         "./data/WA_Fn-UseC_-Telco-Customer-Churn.csv",
         index_col="customerID",
@@ -212,13 +213,14 @@ def generate_random_experiments(parameter_space, iterations):
     return enumerate(ParameterSampler(parameter_space, iterations))
 
 
-def run_pool(generator, args, evaluator):
-    with Pool(processes=args.processes) as pool:
-        results = pool.imap_unordered(
-            evaluator, generator, chunksize=args.chunksize
+def run_pool(generator, evaluator, processes, chunksize=10, verbose=False):
+    with Pool(processes=processes) as pool:
+        results = pool.starmap(
+            evaluator, generator, chunksize=chunksize
         )
-        for r in results:
-            print(".", end="", flush=True)
+        for _ in results:
+            if verbose:
+                print(".", end="", flush=True)
 
 
 # from https://github.com/scikit-learn/scikit-learn/blob/19bffee9b172cf169fded295e3474d1de96cdc57/sklearn/utils/random.py
@@ -421,7 +423,8 @@ def evaluate_predictions(y_true, y_pred, prefix=""):
 
 # TODO too similar to evaluate_lgb_experiment, refactor
 def evaluate_logreg_experiment(
-    experiment,
+    experiment_id,
+    parameters,
     experiment_name,
     n_seeds,
     log_file,
@@ -432,8 +435,6 @@ def evaluate_logreg_experiment(
     y_val,
     folds,
 ):
-    experiment_id, parameters = experiment
-
     log_data = {}
     log_data["name"] = experiment_name
     log_data["experiment_id"] = experiment_id
