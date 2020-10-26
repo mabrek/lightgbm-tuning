@@ -10,20 +10,16 @@ from lightgbm_tuning import (
     read_json_log,
     log_json,
     loguniform,
+    assert_logs_equal
 )
 
 
-@pytest.fixture
-@pytest.mark.parameterize(
+@pytest.mark.parametrize(
     "n_folds,split_kind", [(5, "k-folds"), (20, "shuffle-split")]
 )
-def data(n_folds, split_kind):
-    return read_telecom_churn(n_folds, split_kind)
-
-
-def test_logreg(data, tmp_path):
+def test_logreg(n_folds, split_kind, tmp_path):
     log_lock = Lock()
-    X_train, X_val, y_train, y_val, folds = data
+    X_train, X_val, y_train, y_val, folds = read_telecom_churn(n_folds, split_kind)
 
     iterations = 100
     experiment_log = tmp_path / "experiment.log"
