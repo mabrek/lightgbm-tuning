@@ -98,4 +98,4 @@ def test_logreg(n_folds, split_kind, tmp_path):
         processes=2,
         chunksize=1)
 
-    # TODO compare logs
+    assert_logs_equal(experiment_log, reproduce_log, n_folds)
