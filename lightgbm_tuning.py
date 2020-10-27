@@ -33,7 +33,7 @@ import sys
 from datetime import datetime
 import json
 from itertools import product, chain, islice
-from multiprocessing import Pool
+from multiprocessing import Pool, get_context
 import logging
 import argparse
 from functools import partial
@@ -214,7 +214,7 @@ def generate_random_experiments(parameter_space, iterations):
 
 
 def run_pool(generator, evaluator, processes, chunksize=10, verbose=False):
-    with Pool(processes=processes) as pool:
+    with get_context('fork').Pool(processes=processes) as pool:
         results = pool.starmap(
             evaluator, generator, chunksize=chunksize
         )
