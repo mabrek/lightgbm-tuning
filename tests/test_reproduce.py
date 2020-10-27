@@ -30,7 +30,7 @@ def test_logreg(n_folds, split_kind, tmp_path):
         "clf__fit_intercept": [True, False],
         "clf__intercept_scaling": [1],
         "clf__max_iter": [500],
-        "clf__multi_class": ["warn"],
+        "clf__multi_class": ["ovr"],
         "clf__n_jobs": [1],
         "clf__penalty": ["l2"],
         "clf__random_state": randint(1, 100000),

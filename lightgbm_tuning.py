@@ -43,7 +43,7 @@ import os
 
 import numpy as np
 import pandas as pd
-from pandas.util.testing import assert_frame_equal
+from pandas.testing import assert_frame_equal
 
 from sklearn.utils import check_random_state
 from sklearn.model_selection import (
@@ -174,7 +174,7 @@ def read_telecom_churn(n_folds, split_kind, random_state=67345):
 
     if split_kind == "k-folds":
         folds = list(
-            StratifiedKFold(n_splits=n_folds, random_state=random_state).split(
+            StratifiedKFold(n_splits=n_folds, shuffle=True, random_state=random_state).split(
                 X_train, y_train
             )
         )
