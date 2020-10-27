@@ -1,4 +1,5 @@
 from multiprocessing import Lock
+from functools import partial
 import pytest
 from scipy.stats import randint as randint
 from lightgbm_tuning import (
@@ -40,11 +41,10 @@ def test_logreg(n_folds, split_kind, tmp_path):
         "clf__warm_start": [False],
     }
 
-    # captures data and lock to use in forked processes
-    def experiment_evaluator(experiment_id, parameters):
-        evaluate_logreg_experiment(
-            experiment_id=experiment_id,
-            parameters=parameters,
+    run_pool(
+        generator=generate_random_experiments(parameter_space, iterations),
+        evaluator=partial(
+            evaluate_logreg_experiment,
             experiment_name="reproduce_logreg",
             n_seeds=3,
             log_file=experiment_log,
@@ -54,13 +54,9 @@ def test_logreg(n_folds, split_kind, tmp_path):
             y_train=y_train,
             y_val=y_val,
             folds=folds,
-        )
-
-    run_pool(
-        generator=generate_random_experiments(parameter_space, iterations),
-        evaluator=experiment_evaluator,
+        ),
         processes=3,
-        chunksize=1
+        chunksize=1,
     )
 
     reproduce_log = tmp_path / "reproduce.log"

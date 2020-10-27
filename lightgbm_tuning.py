@@ -215,7 +215,7 @@ def generate_random_experiments(parameter_space, iterations):
 
 def run_pool(generator, evaluator, processes, chunksize=10, verbose=False):
     with get_context('fork').Pool(processes=processes) as pool:
-        results = pool.starmap(
+        results = pool.imap_unordered(
             evaluator, generator, chunksize=chunksize
         )
         for _ in results:
@@ -423,8 +423,7 @@ def evaluate_predictions(y_true, y_pred, prefix=""):
 
 # TODO too similar to evaluate_lgb_experiment, refactor
 def evaluate_logreg_experiment(
-    experiment_id,
-    parameters,
+    experiment,
     experiment_name,
     n_seeds,
     log_file,
@@ -435,6 +434,7 @@ def evaluate_logreg_experiment(
     y_val,
     folds,
 ):
+    experiment_id, parameters = experiment
     log_data = {}
     log_data["name"] = experiment_name
     log_data["experiment_id"] = experiment_id
