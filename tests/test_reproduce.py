@@ -11,7 +11,7 @@ from lightgbm_tuning import (
     read_json_log,
     log_json,
     loguniform,
-    assert_logs_equal
+    assert_logs_equal,
 )
 
 
@@ -20,7 +20,9 @@ from lightgbm_tuning import (
 )
 def test_logreg(n_folds, split_kind, tmp_path):
     log_lock = Lock()
-    X_train, X_val, y_train, y_val, folds = read_telecom_churn(n_folds, split_kind)
+    X_train, X_val, y_train, y_val, folds = read_telecom_churn(
+        n_folds, split_kind
+    )
 
     iterations = 100
     experiment_log = tmp_path / "experiment.log"
@@ -89,9 +91,10 @@ def test_logreg(n_folds, split_kind, tmp_path):
             log_json(reproduce_log, log_data)
 
     run_pool(
-        generator=log_generator(), 
+        generator=log_generator(),
         evaluator=log_evaluator,
         processes=2,
-        chunksize=1)
+        chunksize=1,
+    )
 
     assert_logs_equal(experiment_log, reproduce_log, n_folds)
