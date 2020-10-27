@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 
-from multiprocessing import Lock
 import argparse
 
 import numpy as np
@@ -37,7 +36,6 @@ if __name__ == "__main__":
     parser.add_argument("--num-boost-round", type=int, default=500)
     args = parser.parse_args()
 
-    log_lock = Lock()
     X_train, X_val, y_train, y_val, folds = read_telecom_churn(
         args.n_folds, args.split_kind
     )
@@ -111,7 +109,6 @@ if __name__ == "__main__":
         )
         metrics["success"] = True
         log_data.update(metrics)
-        with log_lock:
-            log_json(args.output_log, log_data)
+        log_json(args.output_log, log_data)
 
     run_pool(generator(), args, evaluator)

@@ -1,4 +1,3 @@
-from multiprocessing import Lock
 from functools import partial
 import pytest
 from scipy.stats import randint as randint
@@ -19,7 +18,6 @@ from lightgbm_tuning import (
     "n_folds,split_kind", [(5, "k-folds"), (20, "shuffle-split")]
 )
 def test_logreg(n_folds, split_kind, tmp_path):
-    log_lock = Lock()
     X_train, X_val, y_train, y_val, folds = read_telecom_churn(
         n_folds, split_kind
     )
@@ -50,7 +48,6 @@ def test_logreg(n_folds, split_kind, tmp_path):
             experiment_name="reproduce_logreg",
             n_seeds=3,
             log_file=experiment_log,
-            log_lock=log_lock,
             X_train=X_train,
             X_val=X_val,
             y_train=y_train,
@@ -87,8 +84,7 @@ def test_logreg(n_folds, split_kind, tmp_path):
         )
         metrics["success"] = True
         log_data.update(metrics)
-        with log_lock:
-            log_json(reproduce_log, log_data)
+        log_json(reproduce_log, log_data)
 
     run_pool(
         generator=log_generator(),
