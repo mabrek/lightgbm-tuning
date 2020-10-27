@@ -40,6 +40,7 @@ from functools import partial
 import gc
 from glob import glob
 import os
+import fcntl
 
 import numpy as np
 import pandas as pd
@@ -289,7 +290,8 @@ def read_json_log(f, chunksize=None):
 
 
 def log_json(file, data):
-    with os.open(file, os.O_APPEND | os.O_TEXT | os.O_EXLOCK) as output:
+    with open(file, "at") as output:
+        fcntl.lockf(output, fcntl.LOCK_EX)
         data["timestamp"] = datetime.now().isoformat()
         print(json.dumps(data), file=output, flush=True)
         os.fsync(output.fileno())
