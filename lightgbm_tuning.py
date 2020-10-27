@@ -40,6 +40,7 @@ from functools import partial
 import gc
 from glob import glob
 import os
+import fcntl
 
 import numpy as np
 import pandas as pd
@@ -290,9 +291,13 @@ def read_json_log(f, chunksize=None):
 
 def log_json(file, data):
     with open(file, "at") as output:
-        data["timestamp"] = datetime.now().isoformat()
-        print(json.dumps(data), file=output, flush=True)
-        os.fsync(output.fileno())
+        try:
+            fcntl.lockf(output, fcntl.LOCK_EX)
+            data["timestamp"] = datetime.now().isoformat()
+            print(json.dumps(data), file=output, flush=True)
+            os.fsync(output.fileno())
+        finally:
+            fcntl.lockf(output, fcntl.LOCK_UN)
 
 
 def evaluate_lgb_experiment(
