@@ -1,5 +1,7 @@
-/data
-/__pycache__
+__pycache__
 /.ipynb_checkpoints
+/.vscode/.ropeproject
+/*.egg-info
+/data
 /experiments/*.pkl
 /experiments/*.xz
