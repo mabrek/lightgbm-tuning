@@ -1,4 +1,4 @@
-from multiprocessing import Lock
+import multiprocessing
 from functools import partial
 import pytest
 from scipy.stats import randint as randint
@@ -19,7 +19,8 @@ from lightgbm_tuning import (
     "n_folds,split_kind", [(5, "k-folds"), (20, "shuffle-split")]
 )
 def test_logreg(n_folds, split_kind, tmp_path):
-    log_lock = Lock()
+    manager = multiprocessing.Manager()
+    log_lock = manager.Lock()
     X_train, X_val, y_train, y_val, folds = read_telecom_churn(
         n_folds, split_kind
     )
