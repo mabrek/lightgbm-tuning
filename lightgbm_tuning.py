@@ -352,6 +352,39 @@ def evaluate_lgb_experiment(
                 log_json(log_file, log_data)
 
 
+def reproduce_lgb_experiment(
+    experiment,
+    log_file,
+    log_lock,
+    num_boost_round,
+    X_train,
+    X_val,
+    y_train,
+    y_val,
+    folds,
+):
+    name, experiment_id, parameters = experiment
+    if np.isnan(parameters["scale_pos_weight"]):
+        parameters["scale_pos_weight"] = None
+    log_data = {}
+    log_data["name"] = name
+    log_data["experiment_id"] = experiment_id
+    log_data.update({"param_" + k: v for k, v in parameters.items()})
+    metrics = evaluate_lgb_parameters(
+        parameters,
+        num_boost_round=num_boost_round,
+        X_train=X_train,
+        X_val=X_val,
+        y_train=y_train,
+        y_val=y_val,
+        folds=folds,
+    )
+    metrics["success"] = True
+    log_data.update(metrics)
+    with log_lock:
+        log_json(log_file, log_data)
+
+
 def evaluate_lgb_parameters(
     parameters, num_boost_round, X_train, X_val, y_train, y_val, folds
 ):
@@ -544,6 +577,16 @@ def evaluate_logreg_parameters(
         )
     )
     return metrics
+
+
+def log_generator(log_file):
+    for _, row in read_json_log(log_file).iterrows():
+        parameters = (
+            row.filter(regex="^param_")
+            .rename(lambda x: x.replace("param_", ""))
+            .to_dict()
+        )
+        yield (row["name"], row["experiment_id"], parameters)
 
 
 def exclude_columns(df, pattern=None):
