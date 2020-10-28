@@ -174,9 +174,9 @@ def read_telecom_churn(n_folds, split_kind, random_state=67345):
 
     if split_kind == "k-folds":
         folds = list(
-            StratifiedKFold(n_splits=n_folds, shuffle=True, random_state=random_state).split(
-                X_train, y_train
-            )
+            StratifiedKFold(
+                n_splits=n_folds, shuffle=True, random_state=random_state
+            ).split(X_train, y_train)
         )
     elif split_kind == "shuffle-split":
         folds = list(
@@ -214,10 +214,8 @@ def generate_random_experiments(parameter_space, iterations):
 
 
 def run_pool(generator, evaluator, processes, chunksize=10, verbose=False):
-    with get_context('fork').Pool(processes=processes) as pool:
-        results = pool.imap_unordered(
-            evaluator, generator, chunksize=chunksize
-        )
+    with get_context("fork").Pool(processes=processes) as pool:
+        results = pool.imap_unordered(evaluator, generator, chunksize=chunksize)
         for _ in results:
             if verbose:
                 print(".", end="", flush=True)
