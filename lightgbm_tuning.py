@@ -40,7 +40,6 @@ from functools import partial
 import gc
 from glob import glob
 import os
-import fcntl
 
 import numpy as np
 import pandas as pd
@@ -291,7 +290,6 @@ def read_json_log(f, chunksize=None):
 
 def log_json(file, data):
     with open(file, "at") as output:
-        fcntl.lockf(output, fcntl.LOCK_EX)
         data["timestamp"] = datetime.now().isoformat()
         print(json.dumps(data), file=output, flush=True)
         os.fsync(output.fileno())
@@ -301,6 +299,7 @@ def evaluate_lgb_experiment(
     experiment,
     experiment_name,
     log_file,
+    log_lock,
     num_boost_round,
     n_seeds,
     X_train,
@@ -351,7 +350,8 @@ def evaluate_lgb_experiment(
             warnings.warn(f'got Exception "{e}" for parameters {parameters}')
             traceback.print_exc(file=sys.stderr)  # TODO use logger instead
         finally:
-            log_json(log_file, log_data)
+            with log_lock:
+                log_json(log_file, log_data)
 
 
 def evaluate_lgb_parameters(
@@ -427,6 +427,7 @@ def evaluate_logreg_experiment(
     experiment_name,
     n_seeds,
     log_file,
+    log_lock,
     X_train,
     X_val,
     y_train,
@@ -453,7 +454,8 @@ def evaluate_logreg_experiment(
             warnings.warn(f'got Exception "{e}" for parameters {parameters}')
             traceback.print_exc(file=sys.stderr)  # TODO use logger instead
         finally:
-            log_json(log_file, log_data)
+            with log_lock:
+                log_json(log_file, log_data)
 
 
 def evaluate_logreg_parameters(
