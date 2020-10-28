@@ -5,6 +5,7 @@ from scipy.stats import randint as randint
 from lightgbm_tuning import (
     read_telecom_churn,
     evaluate_logreg_experiment,
+    reproduce_logreg_experiment,
     evaluate_logreg_parameters,
     generate_random_experiments,
     run_pool,
@@ -73,27 +74,18 @@ def test_logreg(n_folds, split_kind, tmp_path):
             )
             yield (row["name"], row["experiment_id"], parameters)
 
-    def log_evaluator(name, experiment_id, parameters):
-        log_data = {}
-        log_data["name"] = name
-        log_data["experiment_id"] = experiment_id
-        log_data.update({"param_" + k: v for k, v in parameters.items()})
-        metrics = evaluate_logreg_parameters(
-            parameters,
+    run_pool(
+        generator=log_generator(),
+        evaluator=partial(
+            reproduce_logreg_experiment,
+            log_file=reproduce_log,
+            log_lock=log_lock,
             X_train=X_train,
             X_val=X_val,
             y_train=y_train,
             y_val=y_val,
             folds=folds,
-        )
-        metrics["success"] = True
-        log_data.update(metrics)
-        with log_lock:
-            log_json(reproduce_log, log_data)
-
-    run_pool(
-        generator=log_generator(),
-        evaluator=log_evaluator,
+        ),
         processes=2,
         chunksize=1,
     )

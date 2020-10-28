@@ -458,6 +458,28 @@ def evaluate_logreg_experiment(
                 log_json(log_file, log_data)
 
 
+def reproduce_logreg_experiment(
+    experiment, log_file, log_lock, X_train, X_val, y_train, y_val, folds
+):
+    name, experiment_id, parameters = experiment
+    log_data = {}
+    log_data["name"] = name
+    log_data["experiment_id"] = experiment_id
+    log_data.update({"param_" + k: v for k, v in parameters.items()})
+    metrics = evaluate_logreg_parameters(
+        parameters,
+        X_train=X_train,
+        X_val=X_val,
+        y_train=y_train,
+        y_val=y_val,
+        folds=folds,
+    )
+    metrics["success"] = True
+    log_data.update(metrics)
+    with log_lock:
+        log_json(log_file, log_data)
+
+
 def evaluate_logreg_parameters(
     parameters, X_train, X_val, y_train, y_val, folds
 ):
