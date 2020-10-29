@@ -1,5 +1,6 @@
 import multiprocessing
 from functools import partial
+import random
 import pytest
 from scipy.stats import randint as randint
 from scipy.stats import uniform as uniform
@@ -63,14 +64,17 @@ def test_logreg(n_folds, split_kind, tmp_path):
             y_val=y_val,
             folds=folds,
         ),
-        processes=3,
-        chunksize=1,
+        processes=4,
     )
+
+    random.seed(42)
+    shuffled_log = list(log_generator(experiment_log))
+    random.shuffle(shuffled_log)
 
     reproduce_log = tmp_path / "reproduce.log"
 
     run_pool(
-        generator=log_generator(experiment_log),
+        generator=shuffled_log,
         evaluator=partial(
             reproduce_logreg_experiment,
             log_file=reproduce_log,
@@ -81,8 +85,7 @@ def test_logreg(n_folds, split_kind, tmp_path):
             y_val=y_val,
             folds=folds,
         ),
-        processes=2,
-        chunksize=1,
+        processes=4,
     )
 
     assert_logs_equal(experiment_log, reproduce_log, n_folds)
@@ -158,7 +161,7 @@ def test_lightgbm(n_folds, split_kind, tmp_path):
     reproduce_log = tmp_path / "reproduce.log"
 
     run_pool(
-        generator=log_generator(reproduce_log),
+        generator=log_generator(experiment_log),
         evaluator=partial(
             reproduce_lgb_experiment,
             log_file=reproduce_log,
