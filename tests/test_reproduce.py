@@ -17,7 +17,7 @@ from lightgbm_tuning import (
     assert_logs_equal,
     evaluate_lgb_experiment,
     log_generator,
-    reproduce_lgb_experiment
+    reproduce_lgb_experiment,
 )
 
 
@@ -31,7 +31,7 @@ def test_logreg(n_folds, split_kind, tmp_path):
         n_folds, split_kind
     )
 
-    iterations = 100
+    iterations = 50
     experiment_log = tmp_path / "experiment.log"
     parameter_space = {
         "clf__C": loguniform(-5, 3, 10),
@@ -65,6 +65,7 @@ def test_logreg(n_folds, split_kind, tmp_path):
             folds=folds,
         ),
         processes=4,
+        chunksize=5,
     )
 
     random.seed(42)
@@ -86,6 +87,7 @@ def test_logreg(n_folds, split_kind, tmp_path):
             folds=folds,
         ),
         processes=4,
+        chunksize=5,
     )
 
     assert_logs_equal(experiment_log, reproduce_log, n_folds)
@@ -101,7 +103,7 @@ def test_lightgbm(n_folds, split_kind, tmp_path):
         n_folds, split_kind
     )
 
-    iterations = 100
+    iterations = 50
     num_boost_round = 100
     experiment_log = tmp_path / "experiment.log"
     parameter_space = {
@@ -154,14 +156,18 @@ def test_lightgbm(n_folds, split_kind, tmp_path):
             y_val=y_val,
             folds=folds,
         ),
-        processes=3,
-        chunksize=1,
+        processes=4,
+        chunksize=5,
     )
+
+    random.seed(42)
+    shuffled_log = list(log_generator(experiment_log))
+    random.shuffle(shuffled_log)
 
     reproduce_log = tmp_path / "reproduce.log"
 
     run_pool(
-        generator=log_generator(experiment_log),
+        generator=shuffled_log,
         evaluator=partial(
             reproduce_lgb_experiment,
             log_file=reproduce_log,
@@ -173,8 +179,8 @@ def test_lightgbm(n_folds, split_kind, tmp_path):
             y_val=y_val,
             folds=folds,
         ),
-        processes=2,
-        chunksize=1,
+        processes=4,
+        chunksize=5,
     )
 
     assert_logs_equal(experiment_log, reproduce_log, n_folds)
