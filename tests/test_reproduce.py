@@ -2,17 +2,14 @@ import multiprocessing
 from functools import partial
 import random
 import pytest
-from scipy.stats import randint as randint
-from scipy.stats import uniform as uniform
+from scipy.stats import randint
+from scipy.stats import uniform
 from lightgbm_tuning import (
     read_telecom_churn,
     evaluate_logreg_experiment,
     reproduce_logreg_experiment,
-    evaluate_logreg_parameters,
     generate_random_experiments,
     run_pool,
-    read_json_log,
-    log_json,
     loguniform,
     assert_logs_equal,
     evaluate_lgb_experiment,

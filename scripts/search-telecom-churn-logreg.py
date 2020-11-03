@@ -2,7 +2,7 @@
 
 from multiprocessing import Lock
 
-from scipy.stats import randint as randint
+from scipy.stats import randint
 
 from lightgbm_tuning import (
     loguniform,
@@ -38,10 +38,9 @@ if __name__ == "__main__":
     )
 
     # captures data and lock to use in forked processes
-    def evaluator(experiment_id, parameters):
+    def evaluator(experiment):
         evaluate_logreg_experiment(
-            experiment_id=experiment_id,
-            parameters=parameters,
+            experiment=experiment,
             experiment_name=args.name,
             n_seeds=args.n_seeds,
             log_file=args.log,
@@ -57,5 +56,5 @@ if __name__ == "__main__":
         generator=generate_random_experiments(parameter_space, args.iterations),
         evaluator=evaluator,
         processes=args.processes,
-        chunksize=args.chunksize
+        chunksize=args.chunksize,
     )

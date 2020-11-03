@@ -2,12 +2,11 @@
 
 from multiprocessing import Lock
 
-from scipy.stats import randint as randint
-from scipy.stats import uniform as uniform
+from scipy.stats import randint
+from scipy.stats import uniform
 
 from lightgbm_tuning import (
     loguniform,
-    EVAL_AT,
     parse_args,
     read_telecom_churn,
     evaluate_lgb_experiment,

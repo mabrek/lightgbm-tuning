@@ -33,13 +33,13 @@ import sys
 from datetime import datetime
 import json
 from itertools import product, chain, islice
-from multiprocessing import Pool, get_context
 import logging
 import argparse
 from functools import partial
 import gc
 from glob import glob
 import os
+import multiprocessing
 
 import numpy as np
 import pandas as pd
@@ -214,7 +214,7 @@ def generate_random_experiments(parameter_space, iterations):
 
 
 def run_pool(generator, evaluator, processes, chunksize=10, verbose=False):
-    with get_context("fork").Pool(processes=processes) as pool:
+    with multiprocessing.get_context("fork").Pool(processes=processes) as pool:
         results = pool.imap_unordered(evaluator, generator, chunksize=chunksize)
         for _ in results:
             if verbose:
@@ -653,7 +653,7 @@ def summarize_logs(df, n_folds, exclude=None):
 
         iterations.index.name = "iteration"
         iterations.reset_index(inplace=True)
-        iterations.iteration += 1
+        iterations["iteration"] += 1
 
         rows.append(optimize_numerics(iterations))
 
@@ -734,7 +734,7 @@ def unfold_iterations(df, n_folds, exclude=None):
 
             iterations.index.name = "iteration"
             iterations.reset_index(inplace=True)
-            iterations.iteration += 1
+            iterations["iteration"] += 1
 
             rows.append(optimize_numerics(iterations))
 

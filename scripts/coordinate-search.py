@@ -4,8 +4,8 @@ from multiprocessing import Lock
 import argparse
 
 import numpy as np
-from scipy.stats import randint as randint
-from scipy.stats import uniform as uniform
+from scipy.stats import randint
+from scipy.stats import uniform
 from sklearn.model_selection import ParameterSampler
 
 from lightgbm_tuning import (
