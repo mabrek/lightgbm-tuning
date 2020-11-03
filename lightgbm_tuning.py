@@ -40,6 +40,7 @@ import gc
 from glob import glob
 import os
 import multiprocessing
+from typing import List, Dict, Tuple, Union, Callable, Iterable
 
 import numpy as np
 import pandas as pd
@@ -139,7 +140,9 @@ LOGREG_LOG_PARAMETERS = [
 LOGREG_CONT_PARAMETERS = ["param_clf__intercept_scaling"]
 
 
-def read_telecom_churn(n_folds, split_kind, random_state=67345):
+def read_telecom_churn(
+    n_folds: int, split_kind: str, random_state: int = 67345
+) -> Tuple[pd.DataFrame, pd.DataFrame, pd.Series, pd.Series, List]:
     # TODO move data path to config
     df = pd.read_csv(
         "./data/WA_Fn-UseC_-Telco-Customer-Churn.csv",
@@ -188,7 +191,7 @@ def read_telecom_churn(n_folds, split_kind, random_state=67345):
     return X_train, X_val, y_train, y_val, folds
 
 
-def parse_args():
+def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Random search LightGBM parameters"
     )
@@ -209,11 +212,19 @@ def parse_args():
     return parser.parse_args()
 
 
-def generate_random_experiments(parameter_space, iterations):
+def generate_random_experiments(
+    parameter_space: Dict, iterations: int
+) -> enumerate:
     return enumerate(ParameterSampler(parameter_space, iterations))
 
 
-def run_pool(generator, evaluator, processes, chunksize=10, verbose=False):
+def run_pool(
+    generator: Iterable,
+    evaluator: Callable,
+    processes: int,
+    chunksize: int = 10,
+    verbose: bool = False,
+):
     with multiprocessing.get_context("fork").Pool(processes=processes) as pool:
         results = pool.imap_unordered(evaluator, generator, chunksize=chunksize)
         for _ in results:
@@ -274,7 +285,7 @@ class loguniform:
         return rv
 
 
-def read_json_log(f, chunksize=None):
+def read_json_log(f, chunksize=None) -> Union[pd.DataFrame, List[pd.DataFrame]]:
     return pd.read_json(
         f,
         typ="frame",
@@ -286,7 +297,7 @@ def read_json_log(f, chunksize=None):
     )
 
 
-def log_json(file, data):
+def log_json(file: str, data: Dict):
     with open(file, "at") as output:
         data["timestamp"] = datetime.now().isoformat()
         print(json.dumps(data), file=output, flush=True)
@@ -294,17 +305,17 @@ def log_json(file, data):
 
 
 def evaluate_lgb_experiment(
-    experiment,
-    experiment_name,
-    log_file,
-    log_lock,
-    num_boost_round,
-    n_seeds,
-    X_train,
-    X_val,
-    y_train,
-    y_val,
-    folds,
+    experiment: Tuple[str, Dict],
+    experiment_name: str,
+    log_file: str,
+    log_lock: multiprocessing.synchronize.Lock,
+    num_boost_round: int,
+    n_seeds: int,
+    X_train: pd.DataFrame,
+    X_val: pd.DataFrame,
+    y_train: pd.Series,
+    y_val: pd.Series,
+    folds: List,
 ):
 
     experiment_id, parameters = experiment
