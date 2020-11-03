@@ -7,7 +7,6 @@ from scipy.stats import uniform as uniform
 
 from lightgbm_tuning import (
     loguniform,
-    EVAL_AT,
     parse_args,
     read_telecom_churn,
     evaluate_lgb_experiment,
