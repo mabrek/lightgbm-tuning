@@ -114,4 +114,9 @@ if __name__ == "__main__":
         with log_lock:
             log_json(args.output_log, log_data)
 
-    run_pool(generator(), args, evaluator)
+    run_pool(
+        generator=generator(),
+        evaluator=evaluator,
+        processes=args.processes,
+        chunksize=args.chunksize,
+    )

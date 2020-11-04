@@ -73,7 +73,8 @@ if __name__ == "__main__":
         )
 
     run_pool(
-        generate_random_experiments(parameter_space, args.iterations),
-        args,
-        evaluator,
+        generator=generate_random_experiments(parameter_space, args.iterations),
+        evaluator=evaluator,
+        processes=args.processes,
+        chunksize=args.chunksize,
     )
