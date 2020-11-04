@@ -40,7 +40,7 @@ import gc
 from glob import glob
 import os
 import multiprocessing
-from typing import List, Dict, Tuple, Union, Callable, Iterable
+from typing import Dict, Tuple, Callable, Iterable, Sized, Sequence
 
 import numpy as np
 import pandas as pd
@@ -142,7 +142,7 @@ LOGREG_CONT_PARAMETERS = ["param_clf__intercept_scaling"]
 
 def read_telecom_churn(
     n_folds: int, split_kind: str, random_state: int = 67345
-) -> Tuple[pd.DataFrame, pd.DataFrame, pd.Series, pd.Series, List]:
+) -> Tuple[pd.DataFrame, pd.DataFrame, pd.Series, pd.Series, Sized]:
     # TODO move data path to config
     df = pd.read_csv(
         "./data/WA_Fn-UseC_-Telco-Customer-Churn.csv",
@@ -232,7 +232,7 @@ def run_pool(
                 print(".", end="", flush=True)
 
 
-# from https://github.com/scikit-learn/scikit-learn/blob/19bffee9b172cf169fded295e3474d1de96cdc57/sklearn/utils/random.py
+# noqa from https://github.com/scikit-learn/scikit-learn/blob/19bffee9b172cf169fded295e3474d1de96cdc57/sklearn/utils/random.py
 class loguniform:
     """A class supporting log-uniform random variables.
     Parameters
@@ -285,7 +285,7 @@ class loguniform:
         return rv
 
 
-def read_json_log(f, chunksize=None) -> Union[pd.DataFrame, List[pd.DataFrame]]:
+def read_json_log(f, chunksize=None) -> pd.DataFrame:
     return pd.read_json(
         f,
         typ="frame",
@@ -315,7 +315,7 @@ def evaluate_lgb_experiment(
     X_val: pd.DataFrame,
     y_train: pd.Series,
     y_val: pd.Series,
-    folds: List,
+    folds: Sequence,
 ):
 
     experiment_id, parameters = experiment
@@ -397,7 +397,13 @@ def reproduce_lgb_experiment(
 
 
 def evaluate_lgb_parameters(
-    parameters, num_boost_round, X_train, X_val, y_train, y_val, folds
+    parameters: Dict,
+    num_boost_round: int,
+    X_train: pd.DataFrame,
+    X_val: pd.DataFrame,
+    y_train: pd.Series,
+    y_val: pd.Series,
+    folds: Sequence,
 ):
 
     whole_train = lgb.Dataset(
@@ -422,7 +428,7 @@ def evaluate_lgb_parameters(
             group=[len(dev_idx)],
             free_raw_data=False,
         )
-        split_result = {}
+        split_result: Dict[str, Dict[str, np.ndarray]] = {}
         lgb.train(
             parameters,
             train,
@@ -436,7 +442,7 @@ def evaluate_lgb_parameters(
             for score_name, score_values in scores.items():
                 metrics[f"split{f}_{data_name}_{score_name}"] = score_values
 
-    whole_result = {}
+    whole_result: Dict[str, Dict[str, Iterable]] = {}
     lgb.train(
         parameters,
         whole_train,
@@ -453,7 +459,9 @@ def evaluate_lgb_parameters(
     return metrics
 
 
-def evaluate_predictions(y_true, y_pred, prefix=""):
+def evaluate_predictions(
+    y_true: pd.Series, y_pred: pd.Series, prefix: str = ""
+):
     metrics = {}
     metrics[prefix + "binary_logloss"] = [log_loss(y_true, y_pred)]
     metrics[prefix + "auc"] = [roc_auc_score(y_true, y_pred)]
@@ -465,16 +473,16 @@ def evaluate_predictions(y_true, y_pred, prefix=""):
 
 # TODO too similar to evaluate_lgb_experiment, refactor
 def evaluate_logreg_experiment(
-    experiment,
-    experiment_name,
-    n_seeds,
-    log_file,
-    log_lock,
-    X_train,
-    X_val,
-    y_train,
-    y_val,
-    folds,
+    experiment: Tuple[str, Dict],
+    experiment_name: str,
+    n_seeds: int,
+    log_file: str,
+    log_lock: multiprocessing.synchronize.Lock,
+    X_train: pd.DataFrame,
+    X_val: pd.DataFrame,
+    y_train: pd.Series,
+    y_val: pd.Series,
+    folds: Sequence,
 ):
     experiment_id, parameters = experiment
     log_data = {}
@@ -523,7 +531,12 @@ def reproduce_logreg_experiment(
 
 
 def evaluate_logreg_parameters(
-    parameters, X_train, X_val, y_train, y_val, folds
+    parameters: Dict,
+    X_train: pd.DataFrame,
+    X_val: pd.DataFrame,
+    y_train: pd.Series,
+    y_val: pd.Series,
+    folds: Sequence,
 ):
     categorical = X_train.select_dtypes(
         include=["object", "category"]
@@ -590,7 +603,7 @@ def evaluate_logreg_parameters(
     return metrics
 
 
-def log_generator(log_file):
+def log_generator(log_file: str):
     for _, row in read_json_log(log_file).iterrows():
         parameters = (
             row.filter(regex="^param_")
@@ -600,14 +613,14 @@ def log_generator(log_file):
         yield (row["name"], row["experiment_id"], parameters)
 
 
-def exclude_columns(df, pattern=None):
+def exclude_columns(df: pd.DataFrame, pattern: str = None):
     if pattern is not None:
         return df.loc[:, df.columns[~df.columns.str.contains(pattern)]]
     else:
         return df
 
 
-def summarize_logs(df, n_folds, exclude=None):
+def summarize_logs(df: pd.DataFrame, n_folds: int, exclude: str = None):
     df = (
         df[df.success.fillna(False)]
         .pipe(exclude_columns, pattern=exclude)
@@ -672,19 +685,22 @@ def summarize_logs(df, n_folds, exclude=None):
     all_seeds["cnt"] = 1
     del rows
 
-    aggregations = {}
-    for c in all_seeds.columns:
-        if c.startswith("mean_"):
+    aggregations: Dict[str, float] = {}
+    column: str
+    for column in all_seeds.columns:
+        if column.startswith("mean_"):
             # TODO cast to np.float32
-            aggregations[c] = np.mean
-        elif c.startswith("min_"):
-            aggregations[c] = np.min
-        elif c.startswith("max_"):
-            aggregations[c] = np.max
+            aggregations[column] = np.mean
+        elif column.startswith("min_"):
+            aggregations[column] = np.min
+        elif column.startswith("max_"):
+            aggregations[column] = np.max
         elif c == "cnt":
-            aggregations[c] = np.sum
+            aggregations[column] = np.sum
         else:
-            aggregations[c] = np.min  # min is faster than lambda with .iloc[0]
+            aggregations[
+                column
+            ] = np.min  # min is faster than lambda with .iloc[0]
 
     res = (
         all_seeds.groupby(["experiment_id", "iteration"])
@@ -696,7 +712,7 @@ def summarize_logs(df, n_folds, exclude=None):
     return res
 
 
-# from https://medium.com/bigdatarepublic/advanced-pandas-optimize-speed-and-memory-a654b53be6c2
+# noqa from https://medium.com/bigdatarepublic/advanced-pandas-optimize-speed-and-memory-a654b53be6c2
 def optimize_numerics(df: pd.DataFrame) -> pd.DataFrame:
     floats = df.select_dtypes(include=["float64"]).columns.tolist()
     df[floats] = df[floats].apply(pd.to_numeric, downcast="float")
@@ -705,7 +721,7 @@ def optimize_numerics(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-def unfold_iterations(df, n_folds, exclude=None):
+def unfold_iterations(df: pd.DataFrame, n_folds: int, exclude=None):
     df = (
         df[df.success.fillna(False)]
         .pipe(exclude_columns, pattern=exclude)
@@ -782,7 +798,7 @@ def unfold_to_chunks(
         n += 1
 
 
-def drop_boring_columns(df):
+def drop_boring_columns(df: pd.DataFrame):
     df.dropna(how="all", axis="columns", inplace=True)
     df.drop(
         columns=["param_eval_at", "param_metric"], errors="ignore", inplace=True
@@ -796,10 +812,15 @@ def drop_boring_columns(df):
 
 
 def summarize_to_chunks(
-    f, chunk_prefix, n_folds, chunksize=1000, exclude=None, verbose=False
+    filename: str,
+    chunk_prefix: str,
+    n_folds: int,
+    chunksize: int = 1000,
+    exclude: str = None,
+    verbose: bool = False,
 ):
     n = 0
-    for line in read_json_log(f, chunksize):
+    for line in read_json_log(filename, chunksize):
         chunk = summarize_logs(line, n_folds, exclude=exclude)
         chunk_name = f"{chunk_prefix}{n:03d}.pkl"
         chunk.to_pickle(chunk_name)
@@ -810,7 +831,7 @@ def summarize_to_chunks(
         n += 1
 
 
-def aggregate_chunks(chunks_glob):
+def aggregate_chunks(chunks_glob: str) -> pd.DataFrame:
     df = pd.concat(
         [pd.read_pickle(f) for f in glob(chunks_glob)],
         ignore_index=True,
@@ -856,7 +877,7 @@ def read_full_logs(f, chunksize=1000, n_chunks=None, exclude=None):
     )
 
 
-def check_omitted_parameters(df):
+def check_omitted_parameters(df: pd.DataFrame):
     all_parameters = (
         df.filter(like="param_", axis="columns")
         .drop("param_seed", axis="columns")
@@ -873,13 +894,13 @@ def check_omitted_parameters(df):
 
 
 def shaderdots(
-    df,
-    x,
-    y,
-    plot_width,
-    plot_height,
-    category_column=None,
-    x_axis_type="linear",
+    df: pd.DataFrame,
+    x: str,
+    y: str,
+    plot_width: int,
+    plot_height: int,
+    category_column: str = None,
+    x_axis_type: str = "linear",
 ):
     def image_callback(x_range, y_range, w, h):
         if category_column:
@@ -979,7 +1000,9 @@ def top_min_whole_validation_auc(dfs, n):
     )
 
 
-def pre_compare_log(log, n_folds):
+def pre_compare_log(
+    log: str, n_folds: int
+) -> Tuple[pd.DataFrame, pd.DataFrame]:
     experiments, iterations = unfold_iterations(read_json_log(log), n_folds)
     sort_experiments = ["experiment_id"]
     sort_iterations = ["experiment_id"]
@@ -997,14 +1020,21 @@ def pre_compare_log(log, n_folds):
     return experiments, iterations
 
 
-def assert_logs_equal(left_log, right_log, n_folds):
+def assert_logs_equal(left_log: str, right_log: str, n_folds: int):
     left_experiments, left_iterations = pre_compare_log(left_log, n_folds)
     right_experiments, right_iterations = pre_compare_log(right_log, n_folds)
     assert_frame_equal(left_experiments, right_experiments, check_exact=True)
     assert_frame_equal(left_iterations, right_iterations)
 
 
-def quantile_bins(df, x, y, quantiles, bins, quantile_split):
+def quantile_bins(
+    df: pd.DataFrame,
+    x: str,
+    y: str,
+    quantiles: Iterable[float],
+    bins,
+    quantile_split,
+) -> pd.DataFrame:
     if quantile_split:
         cut, edges = pd.qcut(df[x], bins, retbins=True)
     else:
@@ -1017,8 +1047,14 @@ def quantile_bins(df, x, y, quantiles, bins, quantile_split):
 
 
 def experiment_quantiles(
-    experiments, folds, x, y, quantiles, bins, quantile_split
-):
+    experiments: pd.DataFrame,
+    folds: pd.DataFrame,
+    x: str,
+    y: str,
+    quantiles: Iterable[float],
+    bins,
+    quantile_split,
+) -> pd.DataFrame:
     return quantile_bins(
         pd.merge(
             folds[["experiment_id", y]],
