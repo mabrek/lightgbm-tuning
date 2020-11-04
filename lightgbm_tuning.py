@@ -40,7 +40,17 @@ import gc
 from glob import glob
 import os
 import multiprocessing
-from typing import Dict, Tuple, Callable, Iterable, Sized, Sequence
+from typing import (
+    Dict,
+    Tuple,
+    Callable,
+    Iterable,
+    Sized,
+    Sequence,
+    Optional,
+    Set,
+    Any,
+)
 
 import numpy as np
 import pandas as pd
@@ -224,7 +234,7 @@ def run_pool(
     processes: int,
     chunksize: int = 10,
     verbose: bool = False,
-):
+) -> None:
     with multiprocessing.get_context("fork").Pool(processes=processes) as pool:
         results = pool.imap_unordered(evaluator, generator, chunksize=chunksize)
         for _ in results:
@@ -285,7 +295,7 @@ class loguniform:
         return rv
 
 
-def read_json_log(f, chunksize=None) -> pd.DataFrame:
+def read_json_log(f: str, chunksize: Optional[int] = None) -> pd.DataFrame:
     return pd.read_json(
         f,
         typ="frame",
@@ -297,7 +307,7 @@ def read_json_log(f, chunksize=None) -> pd.DataFrame:
     )
 
 
-def log_json(file: str, data: Dict):
+def log_json(file: str, data: Dict) -> None:
     with open(file, "at") as output:
         data["timestamp"] = datetime.now().isoformat()
         print(json.dumps(data), file=output, flush=True)
@@ -316,7 +326,7 @@ def evaluate_lgb_experiment(
     y_train: pd.Series,
     y_val: pd.Series,
     folds: Sequence,
-):
+) -> None:
 
     experiment_id, parameters = experiment
 
@@ -373,7 +383,7 @@ def reproduce_lgb_experiment(
     y_train,
     y_val,
     folds,
-):
+) -> None:
     name, experiment_id, parameters = experiment
     if np.isnan(parameters["scale_pos_weight"]):
         parameters["scale_pos_weight"] = None
@@ -404,7 +414,7 @@ def evaluate_lgb_parameters(
     y_train: pd.Series,
     y_val: pd.Series,
     folds: Sequence,
-):
+) -> Dict[str, Any]:
 
     whole_train = lgb.Dataset(
         X_train, label=y_train, group=[X_train.shape[0]], free_raw_data=False
@@ -461,7 +471,7 @@ def evaluate_lgb_parameters(
 
 def evaluate_predictions(
     y_true: pd.Series, y_pred: pd.Series, prefix: str = ""
-):
+) -> Dict[str, Any]:
     metrics = {}
     metrics[prefix + "binary_logloss"] = [log_loss(y_true, y_pred)]
     metrics[prefix + "auc"] = [roc_auc_score(y_true, y_pred)]
@@ -483,7 +493,7 @@ def evaluate_logreg_experiment(
     y_train: pd.Series,
     y_val: pd.Series,
     folds: Sequence,
-):
+) -> None:
     experiment_id, parameters = experiment
     log_data = {}
     log_data["name"] = experiment_name
@@ -510,7 +520,7 @@ def evaluate_logreg_experiment(
 
 def reproduce_logreg_experiment(
     experiment, log_file, log_lock, X_train, X_val, y_train, y_val, folds
-):
+) -> None:
     name, experiment_id, parameters = experiment
     log_data = {}
     log_data["name"] = name
@@ -537,7 +547,7 @@ def evaluate_logreg_parameters(
     y_train: pd.Series,
     y_val: pd.Series,
     folds: Sequence,
-):
+) -> Dict[str, Any]:
     categorical = X_train.select_dtypes(
         include=["object", "category"]
     ).columns.values
@@ -603,7 +613,7 @@ def evaluate_logreg_parameters(
     return metrics
 
 
-def log_generator(log_file: str):
+def log_generator(log_file: str) -> Iterable[Tuple[str, str, Dict]]:
     for _, row in read_json_log(log_file).iterrows():
         parameters = (
             row.filter(regex="^param_")
@@ -613,14 +623,18 @@ def log_generator(log_file: str):
         yield (row["name"], row["experiment_id"], parameters)
 
 
-def exclude_columns(df: pd.DataFrame, pattern: str = None):
+def exclude_columns(
+    df: pd.DataFrame, pattern: Optional[str] = None
+) -> pd.DataFrame:
     if pattern is not None:
         return df.loc[:, df.columns[~df.columns.str.contains(pattern)]]
     else:
         return df
 
 
-def summarize_logs(df: pd.DataFrame, n_folds: int, exclude: str = None):
+def summarize_logs(
+    df: pd.DataFrame, n_folds: int, exclude: Optional[str] = None
+) -> pd.DataFrame:
     df = (
         df[df.success.fillna(False)]
         .pipe(exclude_columns, pattern=exclude)
@@ -721,7 +735,9 @@ def optimize_numerics(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-def unfold_iterations(df: pd.DataFrame, n_folds: int, exclude=None):
+def unfold_iterations(
+    df: pd.DataFrame, n_folds: int, exclude: Optional[str] = None
+) -> Tuple[pd.DataFrame, pd.DataFrame]:
     df = (
         df[df.success.fillna(False)]
         .pipe(exclude_columns, pattern=exclude)
@@ -782,8 +798,13 @@ def unfold_iterations(df: pd.DataFrame, n_folds: int, exclude=None):
 
 
 def unfold_to_chunks(
-    f, chunk_prefix, n_folds, chunksize=1000, exclude=None, verbose=False
-):
+    f: str,
+    chunk_prefix: str,
+    n_folds: int,
+    chunksize: int = 1000,
+    exclude: Optional[str] = None,
+    verbose=False,
+) -> None:
     n = 0
     for line in read_json_log(f, chunksize):
         experiments, iterations = unfold_iterations(
@@ -798,7 +819,7 @@ def unfold_to_chunks(
         n += 1
 
 
-def drop_boring_columns(df: pd.DataFrame):
+def drop_boring_columns(df: pd.DataFrame) -> pd.DataFrame:
     df.dropna(how="all", axis="columns", inplace=True)
     df.drop(
         columns=["param_eval_at", "param_metric"], errors="ignore", inplace=True
@@ -816,9 +837,9 @@ def summarize_to_chunks(
     chunk_prefix: str,
     n_folds: int,
     chunksize: int = 1000,
-    exclude: str = None,
+    exclude: Optional[str] = None,
     verbose: bool = False,
-):
+) -> None:
     n = 0
     for line in read_json_log(filename, chunksize):
         chunk = summarize_logs(line, n_folds, exclude=exclude)
@@ -867,7 +888,12 @@ def aggregate_chunks(chunks_glob: str) -> pd.DataFrame:
     return drop_boring_columns(df.reset_index(drop=True))
 
 
-def read_full_logs(f, chunksize=1000, n_chunks=None, exclude=None):
+def read_full_logs(
+    f: str,
+    chunksize: int = 1000,
+    n_chunks: Optional[int] = None,
+    exclude: Optional[str] = None,
+) -> pd.DataFrame:
     logs = read_json_log(f, chunksize)
     if n_chunks is not None:
         logs = islice(logs, n_chunks)
@@ -877,7 +903,7 @@ def read_full_logs(f, chunksize=1000, n_chunks=None, exclude=None):
     )
 
 
-def check_omitted_parameters(df: pd.DataFrame):
+def check_omitted_parameters(df: pd.DataFrame) -> Set[str]:
     all_parameters = (
         df.filter(like="param_", axis="columns")
         .drop("param_seed", axis="columns")
@@ -899,7 +925,7 @@ def shaderdots(
     y: str,
     plot_width: int,
     plot_height: int,
-    category_column: str = None,
+    category_column: Optional[str] = None,
     x_axis_type: str = "linear",
 ):
     def image_callback(x_range, y_range, w, h):
@@ -934,7 +960,9 @@ def shaderdots(
     return InteractiveImage(p, image_callback)
 
 
-def read_files(files, query=None):
+def read_files(
+    files: Iterable[str], query: Optional[str] = None
+) -> pd.DataFrame:
     for f in files:
         df = pd.read_pickle(f).assign(file=f)
         if query is None:
@@ -943,7 +971,7 @@ def read_files(files, query=None):
             yield df.query(query)
 
 
-def top_mean_dev_auc(dfs, n):
+def top_mean_dev_auc(dfs: Iterable[pd.DataFrame], n: int) -> pd.DataFrame:
     return (
         pd.concat(
             list(
@@ -962,7 +990,7 @@ def top_mean_dev_auc(dfs, n):
     )
 
 
-def top_min_dev_auc(dfs, n):
+def top_min_dev_auc(dfs: Iterable[pd.DataFrame], n: int) -> pd.DataFrame:
     return (
         pd.concat(
             list(
@@ -981,7 +1009,9 @@ def top_min_dev_auc(dfs, n):
     )
 
 
-def top_min_whole_validation_auc(dfs, n):
+def top_min_whole_validation_auc(
+    dfs: Iterable[pd.DataFrame], n: int
+) -> pd.DataFrame:
     return (
         pd.concat(
             list(
@@ -1020,7 +1050,7 @@ def pre_compare_log(
     return experiments, iterations
 
 
-def assert_logs_equal(left_log: str, right_log: str, n_folds: int):
+def assert_logs_equal(left_log: str, right_log: str, n_folds: int) -> None:
     left_experiments, left_iterations = pre_compare_log(left_log, n_folds)
     right_experiments, right_iterations = pre_compare_log(right_log, n_folds)
     assert_frame_equal(left_experiments, right_experiments, check_exact=True)
