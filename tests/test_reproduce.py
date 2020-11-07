@@ -3,7 +3,6 @@ from functools import partial
 import random
 import pytest
 from scipy.stats import randint
-from scipy.stats import uniform
 from lightgbm_tuning import (
     read_telecom_churn,
     evaluate_logreg_experiment,
