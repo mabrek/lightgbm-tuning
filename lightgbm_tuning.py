@@ -56,6 +56,9 @@ import numpy as np
 import pandas as pd
 from pandas.testing import assert_frame_equal
 
+from scipy.stats import randint
+from scipy.stats import uniform
+
 from sklearn.utils import check_random_state
 from sklearn.model_selection import (
     train_test_split,
@@ -314,6 +317,52 @@ def log_json(file: str, data: Dict) -> None:
         os.fsync(output.fileno())
 
 
+def wide_lightgbm_parameter_space() -> Dict[str, Any]:
+    return {
+        "objective": ["binary"],
+        "boosting": ["gbdt"],
+        "tree_learner": ["serial"],
+        "num_threads": [1],  # will spread different parameter sets across cores
+        "device_type": ["cpu"],
+        "seed": randint(1, 100000),
+        "metric": [["binary_logloss", "auc"]],
+        "verbosity": [-1],
+        "learning_rate": loguniform(low=-8, high=6, base=10),
+        "num_leaves": randint(2, 4000),
+        "max_depth": randint(1, 400),
+        "min_data_in_leaf": randint(1, 2000),
+        "min_sum_hessian_in_leaf": loguniform(low=-10, high=6, base=10),
+        "bagging_enable": [False, True],
+        "bagging_fraction": uniform(loc=0.1, scale=0.9),
+        "bagging_freq": randint(1, 50),
+        "balanced_bagging_enable": [False, True],
+        "pos_bagging_fraction": uniform(loc=0.1, scale=0.9),
+        "neg_bagging_fraction": uniform(loc=0.1, scale=0.9),
+        "feature_fraction_enable": [False, True],
+        "feature_fraction": uniform(loc=0.2, scale=0.8),
+        "feature_fraсtion_bynode_enable": [False, True],
+        "feature_fraction_bynode": uniform(loc=0.2, scale=0.8),
+        "extra_trees": [False],
+        "max_delta_step": loguniform(low=-8, high=6, base=10),
+        "lambda_l1": loguniform(low=-10, high=6, base=10),
+        "lambda_l2": loguniform(low=-10, high=10, base=10),
+        "min_gain_to_split": loguniform(low=-10, high=6, base=10),
+        "min_data_per_group": randint(1, 4000),
+        "max_cat_threshold": randint(1, 2000),
+        "cat_l2": loguniform(low=-10, high=10, base=10),
+        "cat_smooth": loguniform(low=-10, high=10, base=10),
+        "max_cat_to_onehot": randint(1, 100),
+        "path_smooth": loguniform(low=-10, high=10, base=10),
+        "is_unbalance": [False, True],
+        "scale_pos_weight": uniform(loc=0.1, scale=99.9),
+        "sigmoid": loguniform(low=-2, high=2, base=10),
+        "boost_from_average": [False, True],
+        "max_bin": randint(4, 2048),
+        "min_data_in_bin": randint(1, 5000),
+        "bin_construct_sample_cnt": randint(5, 10000),
+    }
+
+
 def evaluate_lgb_experiment(
     experiment: Tuple[str, Dict],
     experiment_name: str,
@@ -337,12 +386,25 @@ def evaluate_lgb_experiment(
         if not parameters["bagging_enable"]:
             parameters["bagging_fraction"] = 1
             parameters["bagging_freq"] = 0
+            parameters["pos_bagging_fraction"] = 1
+            parameters["neg_bagging_fraction"] = 1
+        else:
+            if "balanced_bagging_enable" in parameters:
+                if not parameters["balanced_bagging_enable"]:
+                    parameters["pos_bagging_fraction"] = 1
+                    parameters["neg_bagging_fraction"] = 1
+            del parameters["balanced_bagging_enable"]
         del parameters["bagging_enable"]
 
     if "feature_fraction_enable" in parameters:
         if not parameters["feature_fraction_enable"]:
             parameters["feature_fraction"] = 1
         del parameters["feature_fraction_enable"]
+
+    if "feature_fraction_bynode_enable" in parameters:
+        if not parameters["feature_fraction_bynode_enable"]:
+            parameters["feature_fraction_bynode"] = 1
+        del parameters["feature_fraction_bynode_enable"]
 
     log_data = {}
     log_data["name"] = experiment_name
