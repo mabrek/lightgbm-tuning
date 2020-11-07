@@ -340,7 +340,7 @@ def wide_lightgbm_parameter_space() -> Dict[str, Any]:
         "neg_bagging_fraction": uniform(loc=0.1, scale=0.9),
         "feature_fraction_enable": [False, True],
         "feature_fraction": uniform(loc=0.2, scale=0.8),
-        "feature_fraсtion_bynode_enable": [False, True],
+        "feature_fraction_bynode_enable": [False, True],
         "feature_fraction_bynode": uniform(loc=0.2, scale=0.8),
         "extra_trees": [False],
         "max_delta_step": loguniform(low=-8, high=6, base=10),
@@ -393,8 +393,9 @@ def evaluate_lgb_experiment(
                 if not parameters["balanced_bagging_enable"]:
                     parameters["pos_bagging_fraction"] = 1
                     parameters["neg_bagging_fraction"] = 1
-            del parameters["balanced_bagging_enable"]
-        del parameters["bagging_enable"]
+
+    parameters.pop("bagging_enable", None)
+    parameters.pop("balanced_bagging_enable", None)
 
     if "feature_fraction_enable" in parameters:
         if not parameters["feature_fraction_enable"]:
