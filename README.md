@@ -23,7 +23,7 @@ Start container (change path to cloned repo):
 Run experiments (in docker container):
 
     cd /lightgbm-tuning/
-    ./search-telecom-churn.py --name example-2processes --log experiments/example.log --processes 2 --iterations 10
+    ./scripts/search-telecom-churn.py --name example-2processes --log experiments/example.log --processes 2 --iterations 10
 
 For better performance set `--processes` to the number of physical CPU cores available.
 
